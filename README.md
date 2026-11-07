@@ -2,6 +2,62 @@
 
 Kaatopaikka Capital Investment Terminal: 30 pohjoismaisen teollisuusyhtiön margin reversion -malli, julkinen 10 000 euron paperisalkku ja sijoituspäätösten läpinäkyvä selittäminen. Sivun markkinadata päivittyy arkipäivisin. Alkuperäinen 3D-maapallo on säilytetty omana näkymänään.
 
+## 2024–nykyhetki: läpinäkyvä Strategy Replay -näkymä
+
+Uusi **Strategy Replay (08)** on suunniteltu aidon historiallisen
+sijoitusstrategian tarkasteluun. Se sisältää valmistuessaan erillisen
+päivittäisen NAV- ja vertailukäyrän, as-of-päivän salkkupainot, sijoituspäätökset,
+ostosummat, kulut, alkuperäiset raporttilinkit, tulosjulkistukset, osingot,
+splitit ja havaittuihin tappioihin sidotut tapahtumat. Etusivun Play-painike
+etenee aikajanalla, ja käyttöliittymä tukee eri toistonopeuksia ja
+seuraavaan todennettuun tapahtumaan siirtymistä. Maapallon zoomaus ulottuu
+nyt 40–800 prosenttiin.
+
+**Aineiston tila juuri nyt:** `historical_data/filings.csv`,
+`historical_data/annual_margins.csv` ja `historical_data/prices.csv` ovat
+edelleen pelkkiä sarakeotsakkeita. Projekti ei siis vielä sisällä
+vuonna 2024 tehtyjä todellisia/hypoteettisia kaupankäyntipäätöksiä eikä
+vahvistettua 2024-alkuista tuottosarjaa. Sivustolla ei näytetä tekaistuja
+kauppoja tai tuottoja. Vuoden 2026 paperisalkku pysyy erillisenä.
+Kun **alkuperäisiin lähteisiin perustuva** aineisto on lisätty,
+`historical_data/refresh_status.py` rakentaa raportit automaattisesti
+arkipäivien päivitysten yhteydessä.
+
+### Päiväkohtaiset ja lähdeperusteiset laskentasäännöt
+
+- Lähtökapitalia 10 000 € vuoden 2024 ensimmäisestä soveltuvasta
+  yhteispohjoismaisesta kaupankäyntipäivästä; viisi mallin parasta
+  kelvollista osaketta; enintään 30 %:n paino yksittäiselle osakkeelle.
+- Sijoitussignaali lasketaan vain **edeltävän kaupankäyntipäivän
+  sulkeutuneista hinnoista** ja siihen mennessä julkaistuista tuloksista.
+  Kauppa hinnoitellaan **seuraavan yhteisen kaupankäyntipäivän sulkuun**.
+- Kvartaalitietoina alkuperäinen julkaisuajankohta, TTM-liikevaihto ja EBIT,
+  nettovelka, osakemäärä, beta, raportointivaluutta, ajallinen
+  vero-oletus ja yhtiökohtainen lähde-URL.
+- Alkuperäiset **vuosimarginaalit** ovat historiallisia, aiemmin
+  julkaistuja havaintoja; myöhemmin oikaistuja arvoja ei saa käyttää
+  ennen niiden korjausjulkaisua.
+- Kirjaa 0,15 % kaupankäyntikulu jokaisesta kaupasta, osingot niiden
+  ex-päivänä, splitit osakekohtaisesti ja EUR-valuuttamuunnokset
+  alkuperäisistä lähteistä.
+- Benchmark on yhtä suurin painoin 30 yhtiön ostettu ja pidetty salkku.
+  Tutkimus käyttää nykyistä 30 osakkeen universumia:
+  **survivorship bias** ja ex post -strategiavalinta ovat edelleen
+  tutkimuksen rajoitteita. Tämä ei ole oikeasti sijoitettu historiallinen
+  salkku eikä todistettu sijoitusstrategian tuotto.
+
+### Datan päivittyminen
+
+Nykyinen automaatio hakee kurssit **arkipäivisin markkinan sulkeutumisen
+jälkeen**. Auki oleva sivu tarkistaa julkaistuja tiedostoja
+noin 90 sekunnin välein. Tämä on **automaattinen end-of-day-synkronointi,
+ei pörssin reaaliaikainen markkinadatasyöte**. Oikea sekuntitason
+reaaliaikaisuus vaatisi erillisen lisensoidun datapalvelun ja
+sopivan päivitysinfrastruktuurin.
+
+Tarkka datapohja, käyttöönotto, ajallisen validoinnin ehdot ja
+historiallisten lähderivien esimerkit: [historical_data/README.md](historical_data/README.md).
+
 ## Investment Terminal V3
 
 ### Historiallinen 2024–2026 tutkimusbacktest
