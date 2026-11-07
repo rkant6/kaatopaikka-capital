@@ -152,17 +152,17 @@
   // CPU-only orthographic renderer. It uses the same embedded Natural Earth
   // coast geometry as the WebGL globe, and therefore needs no third-party
   // service, static image, or network request for the shape of the continents.
-  // It is deliberately lightweight: a 240 px shadow texture is updated only
-  // four times per second and coastlines are drawn at 25 fps at most.
+  // It is deliberately lightweight: a low-resolution sunlight texture and
+  // geographic coast outlines are drawn at 25 fps at most.
   function drawFallback(view,now) {
-    const {canvas,ctx,companies,coasts,shade,shadeCtx,terrain}=view;
+    const {canvas,ctx,companies,coasts,shade,shadeCtx}=view;
     const {width:w,height:h}=canvas;
     if(!w||!h)return;
     const t=(now-view.started);
     const auto=view.reducedMotion?0:t*.0011;
     const lon0=(view.lon+auto)*RAD,lat0=view.lat*RAD;
     const sin0=Math.sin(lat0),cos0=Math.cos(lat0);
-    const radius=Math.max(40,Math.min(w*.38,h*.44));
+    const radius=Math.max(40,Math.min(w*.38,h*.44))*view.zoom;
     const cx=w*.50,cy=h*.51;
     const project=(lon,lat)=>{
       const a=lon*RAD-lon0,b=lat*RAD;
@@ -188,14 +188,13 @@
     atmosphere.addColorStop(0,'#0a172800');atmosphere.addColorStop(.78,'#1b7da811');
     atmosphere.addColorStop(.88,'#47c5e929');atmosphere.addColorStop(1,'#47c5e900');
     ctx.fillStyle=atmosphere;ctx.beginPath();ctx.arc(cx,cy,radius*1.13,0,Math.PI*2);ctx.fill();
-    // Rasterize coastlines once to an equirectangular land mask, then perform
-    // inverse orthographic mapping per visible pixel. This ensures coastlines
-    // crossing the horizon cannot close into false triangular land patches.
-    // The solar shading is incorporated in the same pixel operation.
+    // Shade the ocean sphere per visible surface normal. Land boundaries are
+    // rendered as accurate outlines below, never as guessed filled polygons:
+    // even a correctly closed global coastline may straddle the map seam.
+    // This avoids false patches near the horizon and international date line.
     if(now-view.lastShadow>50||view.lastShadow<0){
       view.lastShadow=now;
       const n=shade.width,img=shadeCtx.createImageData(n,n),d=img.data;
-      const mw=terrain.width,mh=terrain.height,landPixels=terrain.pixels;
       for(let y=0;y<n;y++)for(let x=0;x<n;x++){
         const sx=(x+.5)*2/n-1,sy=1-(y+.5)*2/n,rr=sx*sx+sy*sy;
         if(rr>=1)continue;
@@ -204,13 +203,9 @@
         const worldLon=lon0+Math.atan2(sx,forward);
         const latCos=Math.sqrt(Math.max(0,1-yn*yn));
         const sunlight=latCos*Math.sin(worldLon)*sun[0]+yn*sun[1]+latCos*Math.cos(worldLon)*sun[2];
-        const u=((worldLon/RAD+180)%360+360)%360/360;
-        const v=Math.acos(Math.max(-1,Math.min(1,yn)))/Math.PI;
-        const ti=(Math.min(mh-1,Math.max(0,Math.floor(v*mh)))*mw+Math.min(mw-1,Math.floor(u*mw)))*4;
-        const isLand=landPixels[ti+3]>120;
         const daylight=Math.min(1,Math.max(0,(sunlight+.10)/.33));
         const brightness=(.20+daylight*.8)*(.76+.24*front);
-        const col=isLand?[57,96,77]:[13,47,67];
+        const col=[18,55,74];
         const o=(y*n+x)*4;
         d[o]=col[0]*brightness;d[o+1]=col[1]*brightness;d[o+2]=col[2]*brightness;
         d[o+3]=255;
@@ -234,7 +229,7 @@
     for(let lon=-180;lon<180;lon+=15){const pts=[];for(let lat=-90;lat<=90;lat+=3)pts.push([lon,lat]);curve(pts);}
     // Built-in country/coastline source of the primary globe, simplified by
     // skipping every other point (no inaccurate hand-drawn continents).
-    ctx.strokeStyle='#71ad9477';ctx.lineWidth=.67;
+    ctx.strokeStyle='#a4c9aeaa';ctx.lineWidth=.86;
     for(const poly of coasts){
       if(poly.length<8)continue;
       ctx.beginPath();let visible=0,open=false;
@@ -272,31 +267,6 @@
     requestAnimationFrame(frame);
   }
 
-  function buildTerrainMask(polygons) {
-    const width=1440,height=720,map=document.createElement('canvas');
-    map.width=width;map.height=height;
-    const m=map.getContext('2d');m.fillStyle='#ffffff';
-    for(const poly of polygons){
-      if(poly.length<8)continue;
-      const points=[];
-      let last=poly[0];
-      for(let j=0;j<poly.length;j+=2){
-        let lon=poly[j];
-        while(lon-last>180)lon-=360;
-        while(lon-last< -180)lon+=360;
-        last=lon;points.push([lon,poly[j+1]]);
-      }
-      for(const offset of [-360,0,360]){
-        m.beginPath();points.forEach(([lo,la],j)=>{
-          const x=(lo+offset+180)/360*width,y=(90-la)/180*height;
-          if(j===0)m.moveTo(x,y);else m.lineTo(x,y);
-        });
-        m.closePath();m.fill();
-      }
-    }
-    return {width,height,pixels:m.getImageData(0,0,width,height).data};
-  }
-
   async function renderFallback() {
     if(runtime||fallback)return;
     const warn=document.getElementById('warn'),stage=document.getElementById('stage');
@@ -304,14 +274,14 @@
     let companies=[];
     try{const response=await fetch('data.json',{cache:'no-store'});if(response.ok)companies=(await response.json()).companies||[];}catch(_e){}
     const el=document.createElement('div');el.className='globe-2d-fallback';
-    el.innerHTML='<div class="fallback-heading">EARTH / LIVE SOLAR POSITION <span class="fallback-status">CURRENT COMPANY LOCATIONS</span></div><canvas class="fallback-earth" role="img" aria-label="Rotating orthographic globe with actual coastlines, solar day-night shading and Nordic company headquarters"></canvas><div class="fallback-footer">Canvas mode · drag to rotate · UTC solar terminator · company positions use published headquarters. 3D hardware graphics unavailable.</div>';
+    el.innerHTML='<div class="fallback-heading">EARTH / LIVE SOLAR POSITION <span class="fallback-status">CURRENT COMPANY LOCATIONS</span></div><canvas class="fallback-earth" role="img" aria-label="Rotating orthographic globe with actual coastlines, solar day-night shading and Nordic company headquarters"></canvas><div class="fallback-footer">Canvas mode · drag to rotate · scroll to zoom · UTC solar terminator · published company headquarters. 3D hardware graphics unavailable.</div>';
     warn.style.display='none';stage.append(el);fallback=el;
     const canvas=el.querySelector('canvas'),ctx=canvas.getContext('2d',{alpha:true});
     const shade=document.createElement('canvas');shade.width=shade.height=240;
     const shadeCtx=shade.getContext('2d');
     if(!ctx||!shadeCtx)return;
     const coasts=typeof GEO!=='undefined'&&Array.isArray(GEO.land)?GEO.land:[];
-    const view={canvas,ctx,shade,shadeCtx,companies,coasts,terrain:buildTerrainMask(coasts),lon:17,lat:59,started:performance.now(),lastShadow:-1,reducedMotion:matchMedia('(prefers-reduced-motion: reduce)').matches};
+    const view={canvas,ctx,shade,shadeCtx,companies,coasts,lon:17,lat:59,zoom:1,started:performance.now(),lastShadow:-1,reducedMotion:matchMedia('(prefers-reduced-motion: reduce)').matches};
     const resize=()=>{const r=canvas.getBoundingClientRect(),dpr=Math.min(1.5,window.devicePixelRatio||1);canvas.width=Math.max(1,Math.round(r.width*dpr));canvas.height=Math.max(1,Math.round(r.height*dpr));};
     resize();new ResizeObserver(resize).observe(canvas);
     let dragging=false,lastX=0,lastY=0;
@@ -319,6 +289,7 @@
     canvas.addEventListener('pointermove',e=>{if(!dragging)return;view.lon-=(e.clientX-lastX)*.32;view.lat=Math.max(-80,Math.min(80,view.lat+(e.clientY-lastY)*.25));lastX=e.clientX;lastY=e.clientY;view.lastShadow=-1;});
     canvas.addEventListener('pointerup',()=>{dragging=false;});
     canvas.addEventListener('pointercancel',()=>{dragging=false;});
+    canvas.addEventListener('wheel',e=>{e.preventDefault();view.zoom=Math.min(1.5,Math.max(.67,view.zoom*(e.deltaY>0?.94:1.06)));},{passive:false});
     fallbackView=view;startFallbackAnimation(view);
     updateFallback({date:currentDate,mode,companies:null});
   }
