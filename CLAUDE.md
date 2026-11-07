@@ -31,7 +31,8 @@ Kaksi ihmistä muokkaa repoa omilla Claude-istunnoillaan, usein samaan aikaan. S
 - Terminaali hakee verkosta `data.json`, `portfolio.json` ja `simulation.json`, jotka päivittäinen botti kirjoittaa. Käyttöliittymä ei saa tehdä kaupankäyntipäätöksiä eikä tallentaa mallin tuloksia.
 - Kaikki yritysmuistion perustelut on johdettava julkaistun laskennan numeroista. Älä generoi keksittyjä yritysuutisia, katalyyttejä tai sijoitussuosituksia.
 - Tuo näkyviin hintoihin liittyvät päivämäärät, datan vanhentumisen ja mallin oletukset. Älä esitä paperisalkkua oikeana tuottona tai Monte Carlo -tuloksia empiirisinä ennusteina.
-- Teema on tumma, violetti ja hillityn vihreä. Noudata nykyisiä design-tokeneita ja responsiivisuutta.
+- Teema on tumma grafiitinharmaa, Bloomberg-henkinen oranssi, hillitty vihreä ja punainen. Noudata nykyisiä design-tokeneita ja responsiivisuutta. Etusivun maapallon valaistus ja aikajana käyttävät `assets/solar-globe.js` / `assets/solar-home.css` -tiedostoja.
+- Vuoden 2024 historiallisia tuloksia EI saa rekonstruoida suoraan vuoden 2026 `COMPANIES`-tilinpäätöshistoriasta. Käytä vain lähde- ja julkaisupäivitettyä `historical_data/`-aineistoa, `historical_backtest.py`:n vuotovarmistuksia ja ilmoita survivorship bias. Älä lisää generoituja menneitä kauppoja tai meteoreja julkiseen dataan.
 
 ## Säännöt
 
