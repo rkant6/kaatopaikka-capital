@@ -126,41 +126,80 @@ def _latest(rows: list, as_of: date) -> dict | None:
 
 
 def point_in_time_model(tables: dict, signal_session: date, prices_on_signal: dict) -> list:
-    """Rebuild the production model exclusively from previously public reports."""
+    """Rebuild the *current strategy rules* from data public at the signal date.
+
+    The trading and reporting currencies may differ (five firms in the model).
+    Quotes are in actual local trading currency, while the reports are in the
+    original reporting currency. Convert before creating valuation inputs.
+    """
     filings=defaultdict(list)
     annual=defaultdict(list)
-    for row in tables["filings"]:filings[row["company"]].append(row)
-    for row in tables["annual_margins"]:annual[row["company"]].append(row)
+    stock_actions=defaultdict(list)
+    for row in tables["filings"]:
+        filings[row["company"]].append(row)
+    for row in tables["annual_margins"]:
+        annual[row["company"]].append(row)
+    for row in tables["prices"]:
+        if _number(row, "split_factor") != 1:
+            stock_actions[row["company"]].append(row)
     companies=[]
+    all_latest_years=[]
     for base in model.COMPANIES:
         name=base["name"]
         doc=_latest(filings[name],signal_session)
         quote=prices_on_signal.get(name)
         if doc is None or quote is None:
             raise CoverageError(f"No point-in-time filing or quote for {name} on {signal_session}")
+        if _day(quote["date"], "quote date") > signal_session:
+            raise CoverageError(f"Future quote used by signal for {name}")
         c=copy.deepcopy(base)
-        # New lookback history is built from dated, explicitly sourced reports;
-        # never use the undated 2013-2025 margins embedded in the live model.
         history={int(r["fiscal_year"]):_number(r,"operating_margin") for r in annual[name]
-                 if _day(r["published_on"],"published_on") < signal_session}
+                 if _day(r["published_on"],"published_on") < signal_session
+                 and _day(r["period_end"],"period_end") < signal_session}
+        if len(history)<3:
+            raise CoverageError(f"Fewer than three previously published annual margins for {name}")
         c["mar"]=[history.get(y) for y in model.YEARS]
-        # Production model historically requires observations from its own
-        # first-year cutoff, which must not be shifted forward post hoc.
-        c["first"]=min(history,default=9999)
+        c["first"]=min(history)
+        all_latest_years.append(max(history))
         c["flag"]=doc["structural_flag"]
-        price=_number(quote,"close")
+        filing_date=_day(doc["published_on"],"published_on")
         shares=_number(doc,"shares_m")
-        net_debt=_number(doc,"net_debt_m")
+        # After a split the shares outstanding from the previous report are
+        # no longer valid; adjust using only splits between report and signal.
+        for action in stock_actions[name]:
+            dt=_day(action["date"],"split date")
+            if filing_date < dt <= signal_session:
+                shares*=_number(action,"split_factor")
+        fx_trade=_number(quote,"fx_to_eur")
+        if base["rep"]==base["trd"]:
+            fx_report=fx_trade
+        else:
+            if not quote.get("reporting_fx_to_eur"):
+                raise CoverageError(
+                    f"Missing source-dated {base['rep']} reporting FX for {name} at {signal_session}")
+            fx_report=_number(quote,"reporting_fx_to_eur")
+        if fx_trade<=0 or fx_report<=0:
+            raise CoverageError(f"Nonpositive FX for {name}")
+        report_to_trade=fx_report/fx_trade
+        price=_number(quote,"close")
+        rev=_number(doc,"revenue_ttm_m")*report_to_trade
+        ebit=_number(doc,"ebit_ttm_m")*report_to_trade
+        net_debt=_number(doc,"net_debt_m")*report_to_trade
         mcap=price*shares
-        c["mkt"]=(price,quote["date"],shares,mcap,net_debt,mcap+net_debt,
-                   _number(doc,"revenue_ttm_m"),_number(doc,"ebit_ttm_m"),_number(doc,"beta"))
+        c["tax_override"]=_number(doc,"tax_rate")
+        c["mkt"]=(price,quote["date"],shares,mcap,net_debt,mcap+net_debt,rev,ebit,
+                  _number(doc,"beta"))
         companies.append(c)
     assumptions=model.default_assumptions()
-    assumptions["LastFY"]=min(model.YEARS[-1],signal_session.year-1)
-    # All firms are required so today's surviving subset cannot silently
-    # shrink at earlier timestamps; universe survivorship is flagged in output.
-    return model.compute_model(companies,assumptions)
-
+    # Conservative common last FY: FY2023 cannot enter a January 2024 model
+    # merely because one firm later published its FY2023 annual report.
+    assumptions["LastFY"]=min(min(all_latest_years),signal_session.year-1,model.YEARS[-1])
+    if assumptions["LastFY"] not in model.YEARS:
+        raise CoverageError(f"Insufficient dated annual-report history as at {signal_session}")
+    try:
+        return model.compute_model(companies,assumptions)
+    except (TypeError,ValueError,ZeroDivisionError,IndexError) as exc:
+        raise CoverageError(f"Historical model failed at {signal_session}: {exc}") from exc
 
 def replay(tables: dict, through: date | None = None) -> dict:
     """Daily EUR NAV, signal at yesterday's close, trade at today's close.
