@@ -15,7 +15,7 @@
   const clamp = (n,min,max)=>Math.max(min,Math.min(max,n));
   const signal = s => /^(LONG|WATCH|NEUTRAL|SHORT|EXCLUDED)/.exec(s || '')?.[1] || 'NEUTRAL';
   const tag = s => {const k=signal(s);return `<span class="tag tag-${k.toLowerCase()}">${k === 'SHORT' ? 'AVOID' : k}</span>`;};
-  const colorOf = s => ({LONG:'#5bd7a8',WATCH:'#f6c371',NEUTRAL:'#8391af',SHORT:'#ff828b',EXCLUDED:'#6e7280'})[signal(s)];
+  const colorOf = s => ({LONG:'#4bd6a7',WATCH:'#ffbd54',NEUTRAL:'#95a2b6',SHORT:'#ff777c',EXCLUDED:'#747e8b'})[signal(s)];
   const signedClass = v => v > 0 ? 'positive' : v < 0 ? 'negative' : '';
   const pageNames = {overview:'OVERVIEW',research:'RESEARCH',portfolio:'PORTFOLIO',decisions:'DECISION JOURNAL',lab:'VALUATION LAB',globe:'NORDIC GLOBE',methodology:'METHODOLOGY'};
   const state = {data:null,port:null,sim:null,sort:'rank',desc:false,lab:null,opened:null,lastFocus:null};
@@ -96,8 +96,8 @@
         const command=started?'L':'M';started=true;
         return `${command}${X(i).toFixed(1)} ${Y(v).toFixed(1)}`;
       }).join(' ');
-      out+=`<path d="${path}" fill="none" stroke="${s.color||['#b69aff','#5bd7a8'][idx%2]}" stroke-width="${idx?2:3}" stroke-linejoin="round" stroke-linecap="round" ${s.dash?'stroke-dasharray="5 6"':''}/>`;
-      const last=s.values.at(-1);if(Number.isFinite(last))out+=`<circle cx="${X(s.values.length-1)}" cy="${Y(last)}" r="4" stroke="#10151d" stroke-width="2" fill="${s.color||'#b69aff'}"/>`;
+      out+=`<path d="${path}" fill="none" stroke="${s.color||['#ffad32','#4bd6a7'][idx%2]}" stroke-width="${idx?2:3}" stroke-linejoin="round" stroke-linecap="round" ${s.dash?'stroke-dasharray="5 6"':''}/>`;
+      const last=s.values.at(-1);if(Number.isFinite(last))out+=`<circle cx="${X(s.values.length-1)}" cy="${Y(last)}" r="4" stroke="#10151d" stroke-width="2" fill="${s.color||'#ffad32'}"/>`;
     });
     const indices=[...new Set([0,Math.floor((n-1)/2),n-1])];indices.forEach(i=>{out+=`<text x="${X(i)}" y="${H-12}" fill="#8e98aa" font-family="IBM Plex Mono" font-size="10" text-anchor="middle">${esc(labels[i]||'')}</text>`;});
     return out+'</svg>'+`<div class="chart-legend">${series.map(s=>`<span><i class="legend-line" style="background:${s.color}"></i>${esc(s.name)}</span>`).join('')}</div>`;
@@ -116,7 +116,7 @@
     ].join('');
     $('#overview-portfolio').innerHTML=`<div><div class="big-number">${eur(value)}</div><div class="number-caption">Starting capital ${eur(P?.start_capital||10000)} · simulated portfolio</div></div><div class="performance-badge ${ret<0?'loss':''}">${pct(ret,2,true)} TOTAL RETURN</div>`;
     const hist=P?.history||[];
-    $('#overview-chart').innerHTML=hist.length>1?svgLine([{name:'Kaatopaikka',values:hist.map(h=>h.value),color:'#b69aff'},{name:'Equal-weight 30',values:hist.map(h=>h.bench),color:'#7c9ab6',dash:true}],hist.map(h=>shortDate(h.date)),{money:true,label:'Paper portfolio value vs equal-weight universe'}):`<div class="empty-chart"><strong>Track record just started</strong><span>The performance chart appears after the second daily observation.<br>Current value includes estimated execution costs.</span></div>`;
+    $('#overview-chart').innerHTML=hist.length>1?svgLine([{name:'Kaatopaikka',values:hist.map(h=>h.value),color:'#ffad32'},{name:'Equal-weight 30',values:hist.map(h=>h.bench),color:'#7c9ab6',dash:true}],hist.map(h=>shortDate(h.date)),{money:true,label:'Paper portfolio value vs equal-weight universe'}):`<div class="empty-chart"><strong>Track record just started</strong><span>The performance chart appears after the second daily observation.<br>Current value includes estimated execution costs.</span></div>`;
     $('#overview-picks').innerHTML=companies.filter(c=>!['SHORT','EXCLUDED'].includes(signal(c.signal))).sort((a,b)=>a.rank-b.rank).slice(0,5).map(c=>`<button class="opportunity-row" data-open="${esc(c.id)}"><span class="rank-index">${String(c.rank).padStart(2,'0')}</span><span class="company-main">${esc(c.name)}<small>${esc(c.group)} · ${esc(c.country)}</small></span><span class="opportunity-numbers"><strong class="${signedClass(c.revUp)}">${pct(c.revUp,0,true)}</strong><small>${signal(c.signal)==='WATCH'?'WATCH / CAUTION':signal(c.signal)}</small></span></button>`).join('');
     const chosen=positions.length?find(positions[0].id):companies.find(c=>c.rank===1);
     const memo=chosen?modelRationale(chosen):null;
@@ -142,7 +142,7 @@
     if(!P){$('#portfolio-stats').innerHTML=stat('Portfolio','Unavailable','No portfolio.json loaded');return;}
     const ret=P.value/P.start_capital-1,br=P.bench_value/P.start_capital-1;
     $('#portfolio-stats').innerHTML=[stat('Net asset value',eur(P.value),`Started ${fmtDate(P.inception)}`),stat('Total return',pct(ret,2,true),'Excluding dividends',signedClass(ret)),stat('Relative to benchmark',pp(ret-br,2),'Equal-weight universe',signedClass(ret-br)),stat('Trading costs',eur(P.costs_paid||0),`${hold.length} positions · ${P.history.length} observations`)].join('');
-    $('#portfolio-history').innerHTML=P.history.length>1?svgLine([{name:'Strategy',values:P.history.map(h=>h.value),color:'#b69aff'},{name:'Equal-weight universe',values:P.history.map(h=>h.bench),color:'#7c9ab6',dash:true}],P.history.map(h=>shortDate(h.date)),{money:true,label:'Portfolio performance history'}):'<div class="empty-chart"><strong>More observations required</strong><span>A performance chart cannot be inferred from one trading day.</span></div>';
+    $('#portfolio-history').innerHTML=P.history.length>1?svgLine([{name:'Strategy',values:P.history.map(h=>h.value),color:'#ffad32'},{name:'Equal-weight universe',values:P.history.map(h=>h.bench),color:'#7c9ab6',dash:true}],P.history.map(h=>shortDate(h.date)),{money:true,label:'Portfolio performance history'}):'<div class="empty-chart"><strong>More observations required</strong><span>A performance chart cannot be inferred from one trading day.</span></div>';
     const country={};const sector={};hold.forEach(h=>{const c=find(h.id);if(!c)return;country[c.country]=(country[c.country]||0)+h.weight;sector[c.group]=(sector[c.group]||0)+h.weight;});
     const exposure=(title,map)=>`<div class="exposure-section"><div class="eyebrow" style="margin-bottom:14px">${title}</div>${Object.entries(map).sort((a,b)=>b[1]-a[1]).map(([k,w])=>`<div style="margin-bottom:12px"><div class="exposure-top"><span>${esc(k)}</span><span>${pct(w)}</span></div><div class="exposure-bar"><i style="width:${clamp(w*100,0,100)}%"></i></div></div>`).join('')}</div>`;
     $('#portfolio-exposure').innerHTML=`<div class="exposure">${exposure('BY COUNTRY',country)}${exposure('BY SECTOR',sector)}<div class="exposure-hint">Concentration is based on portfolio weights, not a covariance or factor-risk model. Five holdings can have correlated exposures despite operating in different industries.</div></div>`;
@@ -159,23 +159,73 @@
     const date=c.priceDate||state.data.meta.priceTo;
     const years=state.data.meta.years||[];
     const margins=(c.margins||[]).map(v=>v===null?NaN:v*100);
-    const chart=svgLine([{name:'Reported EBIT margin',values:margins,color:'#b69aff'},{name:'Current normalized estimate',values:margins.map(()=>c.norm*100),color:'#5bd7a8',dash:true}],years.map(String),{label:`${c.name} operating margin history`,suffix:'%',digits:1});
+    const chart=svgLine([{name:'Reported EBIT margin',values:margins,color:'#ffad32'},{name:'Current normalized estimate',values:margins.map(()=>c.norm*100),color:'#4bd6a7',dash:true}],years.map(String),{label:`${c.name} operating margin history`,suffix:'%',digits:1});
     return `<div class="drawer-body"><div class="eyebrow">RANK ${c.rank} / ${state.data.companies.length} · ${esc(c.group).toUpperCase()}</div><h2 class="drawer-title" id="drawer-title">${esc(c.name)}</h2><div class="drawer-subtitle">${tag(c.signal)}<span>${esc(c.ticker)} · ${esc(c.country)}</span><span>Quote ${fmtDate(date)}</span></div><div class="drawer-stats"><div class="drawer-metric"><small>REVERSION UPSIDE</small><strong class="${signedClass(c.revUp)}">${pct(c.revUp,1,true)}</strong></div><div class="drawer-metric"><small>NORMAL MARGIN</small><strong>${pct(c.norm)}</strong></div><div class="drawer-metric"><small>COMPOSITE SCORE</small><strong>${dec(c.score)}</strong></div><div class="drawer-metric"><small>CURRENT MARGIN</small><strong>${pct(c.cur)}</strong></div><div class="drawer-metric"><small>MARGIN GAP</small><strong class="${signedClass(c.gap)}">${pp(c.gap)}</strong></div><div class="drawer-metric"><small>EV / NORM. EBIT</small><strong>${dec(c.evNorm,1)}×</strong></div></div><div class="drawer-section"><h3>Investment decision</h3><div class="memo-callout">${esc(memo.decision)}</div>${held?`<p style="margin-top:14px">Current paper position: ${pct(held.weight)} · ${eur(held.value)} · return ${pct(held.ret,1,true)} excluding dividends.</p>`:target?`<p>Target allocation: ${pct(target.weight)}</p>`:''}</div><div class="drawer-section"><h3>Why the model is interested</h3><div class="memo-list">${memo.reasons.map(r=>`<div class="memo-item"><i>✓</i><span>${esc(r)}</span></div>`).join('')||'<p>No positive model factors at the selected thresholds.</p>'}</div></div><div class="drawer-section"><h3>Risks and alternative explanations</h3><div class="memo-list">${(memo.risks.length?memo.risks:['A depressed margin can reflect permanent competitive deterioration; recovering profitability is not assured.']).map(r=>`<div class="memo-item risk"><i>!</i><span>${esc(r)}</span></div>`).join('')}<div class="memo-item risk"><i>!</i><span>Stock returns depend on future expectations and valuation, not margin recovery alone.</span></div></div></div><div class="drawer-section"><h3>Historical operating margin</h3>${chart}</div><div class="drawer-section"><h3>What would change our view?</h3><p>Reassess when new reported margins materially shift the normalization estimate, when evidence points to a structural break, or when the price moves enough to change the valuation and rank. This is a testable monitoring rule, not a company-specific catalyst claim.</p>${c.note?`<div class="source-note">Data context: ${esc(c.note)}</div>`:''}<p class="small-text">Historical observations: ${c.nObs}; persistence φ = ${dec(c.phi)}; illustrative margin half-life ${dec(c.hl,1)} years. Market-cap figure: €${dec(c.mcapEur,1)}bn.</p></div><div class="drawer-section"><div class="drawer-actions"><button class="button button-primary" id="drawer-lab">Explore in margin lab ↗</button><button class="button button-ghost" id="drawer-copy">Copy research link ↗</button></div></div><div class="source-note">Auto-generated explanation from the currently published model fields. No AI-generated company claims, verified fundamental news, human investment committee approval or personalized investment advice is implied. Source financial statements are not refreshed with every price update.</div></div>`;
   }
   function renderLabOptions() {
     $('#lab-company').innerHTML=[...state.data.companies].sort((a,b)=>a.rank-b.rank).map(c=>`<option value="${esc(c.id)}">${esc(c.name)} · #${c.rank}</option>`).join('');
     resetLab(state.data.companies.find(c=>c.rank===1)||state.data.companies[0]);
   }
-  function resetLab(c){if(!c)return;$('#lab-company').value=c.id;state.lab={cur:c.cur*100,norm:c.norm*100,phi:c.phi};drawLab();}
+  function resetLab(c){
+    if(!c)return;
+    $('#lab-company').value=c.id;
+    const v=c.valuation;
+    state.lab={cur:c.cur*100,norm:c.norm*100,phi:c.phi,
+      wacc:(v?.discountRate??c.disc??.09)*100,
+      growth:(v?.growthExplicit??.03)*100,
+      terminal:(v?.growthTerminal??.02)*100,
+      ronic:(v?.ronic??.15)*100};
+    drawLab();
+  }
   function drawLab() {
     const c=find($('#lab-company').value),L=state.lab;if(!L||!c)return;
-    const ids={cur:'lab-cur',norm:'lab-norm',phi:'lab-phi'};
-    for(const [k,id] of Object.entries(ids)){$(`#${id}`).value=L[k];$(`#${id}-out`).value=k==='phi'?L[k].toFixed(2):`${L[k].toFixed(2)}%`;}
+    const ids=['cur','norm','phi','wacc','growth','terminal','ronic'];
+    for(const k of ids){
+      const el=$(`#lab-${k}`);el.value=clamp(L[k],Number(el.min),Number(el.max));
+      $(`#lab-${k}-out`).value=k==='phi'?L[k].toFixed(2):`${L[k].toFixed(2)}%`;
+    }
     const years=Array.from({length:11},(_,i)=>`Y${i}`),path=years.map((_,t)=>L.norm+Math.pow(L.phi,t)*(L.cur-L.norm));
-    $('#lab-result-title').textContent=`${c.name}: margin recovery scenario`;
-    $('#lab-key-metrics').innerHTML=`<div class="lab-key"><div class="lab-key-box"><small>CURRENT</small><strong>${L.cur.toFixed(1)}%</strong></div><div class="lab-key-box"><small>YEAR 5</small><strong>${path[5].toFixed(1)}%</strong></div><div class="lab-key-box"><small>LONG-RUN LEVEL</small><strong>${L.norm.toFixed(1)}%</strong></div><div class="lab-key-box"><small>CHANGE BY YEAR 5</small><strong class="${signedClass(path[5]-L.cur)}">${(path[5]-L.cur)>0?'+':''}${(path[5]-L.cur).toFixed(1)} pp</strong></div></div>`;
-    $('#lab-chart').innerHTML=svgLine([{name:'Modeled operating margin',values:path,color:'#b69aff'},{name:'Normalized target',values:years.map(()=>L.norm),color:'#5bd7a8',dash:true}],years,{suffix:'%',digits:1,label:'Illustrative operating margin path'});
+    $('#lab-result-title').textContent=`${c.name}: live DCF scenario`;
+    $('#lab-chart').innerHTML=svgLine([{name:'Modeled operating margin',values:path,color:'#ffad32'},{name:'Normalized target',values:years.map(()=>L.norm),color:'#4bd6a7',dash:true}],years,{suffix:'%',digits:1,label:'Ten-year operating margin path'});
     $('#lab-table').innerHTML=`<div class="lab-table"><table><thead><tr>${years.filter((_,i)=>i%2===0).map(y=>`<th>${y}</th>`).join('')}</tr></thead><tbody><tr>${path.filter((_,i)=>i%2===0).map(v=>`<td>${v.toFixed(1)}%</td>`).join('')}</tr></tbody></table></div>`;
+    const metric=(label,value,klass='')=>`<div class="lab-key-box"><small>${esc(label)}</small><strong class="${klass}">${esc(value)}</strong></div>`;
+    const assumptions={currentMargin:L.cur/100,normalizedMargin:L.norm/100,persistence:L.phi,
+      discountRate:L.wacc/100,growthExplicit:L.growth/100,growthTerminal:L.terminal/100,ronic:L.ronic/100};
+    if(!c.valuation||!window.KCValuation){
+      $('#lab-key-metrics').innerHTML=`<div class="lab-key">${metric('CURRENT MARGIN',`${L.cur.toFixed(1)}%`)}${metric('YEAR 5',`${path[5].toFixed(1)}%`)}${metric('NORMALIZED',`${L.norm.toFixed(1)}%`)}</div>`;
+      $('#lab-validation').textContent='Awaiting a daily model refresh to publish revenue, capital structure and tax inputs. DCF outputs are withheld until their source data is available.';
+      $('#lab-validation').className='lab-validation warn';
+      $('#lab-sensitivity').innerHTML='<div class="sensitivity-note">The sensitivity grid will activate as soon as the model publishes the valuation inputs. No implied values are invented.</div>';
+      return;
+    }
+    const result=window.KCValuation.calculate(c.valuation,assumptions);
+    if(!result.valid){
+      $('#lab-key-metrics').innerHTML=`<div class="lab-key">${metric('CURRENT MARGIN',`${L.cur.toFixed(1)}%`)}${metric('YEAR 5',`${path[5].toFixed(1)}%`)}${metric('NORMALIZED',`${L.norm.toFixed(1)}%`)}</div>`;
+      $('#lab-validation').textContent=result.error;
+      $('#lab-validation').className='lab-validation warn';
+    } else {
+      const curr=c.ccy||'LOCAL';
+      const amount=n=>`${curr} ${new Intl.NumberFormat('en-US',{maximumFractionDigits:0}).format(n)}m`;
+      const share=result.terminalShare;
+      $('#lab-key-metrics').innerHTML=`<div class="lab-key">${metric('DCF EQUITY UPSIDE',pct(result.upside,1,true),signedClass(result.upside))}${metric('FAIR EQUITY VALUE',amount(result.fairEquity))}${metric('PRESENT VALUE / TERMINAL',share===null?'—':pct(share,1))}${metric('YEAR 5 MARGIN',`${path[5].toFixed(1)}%`)}</div>`;
+      const isBase=Object.entries(assumptions).every(([k,v])=>Math.abs(v-c.valuation[k])<1e-9);
+      const delta=result.upside-c.fairUp;
+      $('#lab-validation').textContent=isBase
+        ?(Math.abs(delta)<1e-7?`✓ Baseline reconciles with published DCF: ${pct(c.fairUp,1,true)} fair-value upside.`:`⚠ Published-model mismatch: ${pp(delta,3)}. Verify the financial snapshot.`)
+        :`SCENARIO / NOT A FORECAST · Published DCF baseline: ${pct(c.fairUp,1,true)}. Current scenario: ${pct(result.upside,1,true)}.`;
+      $('#lab-validation').className=`lab-validation ${isBase&&Math.abs(delta)<1e-7?'good':isBase?'warn':''}`;
+    }
+    const offsets=[-2,-1,0,1,2],marginOffsets=[-3,-1.5,0,1.5,3];
+    const cells=offsets.map((rateDelta,row)=>{
+      const rate=L.wacc+rateDelta;
+      return `<tr><th scope="row">${rate.toFixed(2)}%</th>${marginOffsets.map((marginDelta,col)=>{
+        const norm=L.norm+marginDelta;
+        const value=window.KCValuation.calculate(c.valuation,{...assumptions,discountRate:rate/100,normalizedMargin:norm/100});
+        const k=!value.valid?'invalid':value.upside>=.5?'deep-positive':value.upside>=0?'positive-cell':value.upside<=-.5?'deep-negative':'negative-cell';
+        return `<td class="${k} ${row===2&&col===2?'current-cell':''}" title="Discount rate ${rate.toFixed(2)}%; normalized margin ${norm.toFixed(2)}%" aria-label="WACC ${rate.toFixed(2)} percent, normalized margin ${norm.toFixed(2)} percent: ${value.valid?pct(value.upside,1,true):'invalid assumptions'}">${value.valid?pct(value.upside,0,true):'N/A'}</td>`;
+      }).join('')}</tr>`;
+    }).join('');
+    $('#lab-sensitivity').innerHTML=`<div class="sensitivity-wrap"><table class="sensitivity-table"><thead><tr><th scope="col">WACC ↓ / MARGIN →</th>${marginOffsets.map(d=>`<th scope="col">${(L.norm+d).toFixed(2)}%</th>`).join('')}</tr></thead><tbody>${cells}</tbody></table></div><div class="sensitivity-note">Rows: discount rate ±2 percentage points in 1 pp steps. Columns: normalized margin ±3 percentage points in 1.5 pp steps. Terminal growth and other assumptions are held at the scenario values. Green indicates positive equity fair-value upside; red indicates negative. A result is not a probability-weighted forecast.</div>`;
   }
   function renderMethod() {
     const M=state.data.meta;
@@ -192,7 +242,7 @@
     ['research-query','research-country','research-signal'].forEach(id=>$( `#${id}`).addEventListener(id==='research-query'?'input':'change',()=>state.data&&renderResearch()));
     $$('[data-sort]').forEach(b=>b.addEventListener('click',()=>{const s=b.dataset.sort;state.desc=state.sort===s?!state.desc:s!=='rank';state.sort=s;renderResearch();}));
     $('#lab-company').addEventListener('change',e=>resetLab(find(e.target.value)));
-    ['cur','norm','phi'].forEach(k=>$(`#lab-${k}`).addEventListener('input',e=>{state.lab[k]=Number(e.target.value);drawLab();}));
+    ['cur','norm','phi','wacc','growth','terminal','ronic'].forEach(k=>$(`#lab-${k}`).addEventListener('input',e=>{state.lab[k]=Number(e.target.value);drawLab();}));
     $('#lab-reset').addEventListener('click',()=>resetLab(find($('#lab-company').value)));
     window.addEventListener('hashchange',readHash);
   }
