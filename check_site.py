@@ -43,8 +43,27 @@ def check_javascript():
         html = f.read()
     blocks = re.findall(r"<script\b([^>]*)>(.*?)</script>", html, re.S | re.I)
     code = [body for attrs, body in blocks if "src=" not in attrs and "json" not in attrs.lower() and body.strip()]
+    # The professional terminal keeps JavaScript in a separate, testable asset.
+    assets = re.findall(r'<script[^>]+src=["\']([^"\']+\.js)["\']', html, re.I)
+    for rel in assets:
+        if rel.startswith(('https://', 'http://')):
+            continue
+        source = os.path.join(HERE, rel)
+        if not os.path.isfile(source):
+            fail(f"missing JavaScript asset: {rel}")
+        with open(source, encoding="utf-8") as f:
+            code.append(f.read())
     if not code:
-        fail("index.html has no inline JavaScript")
+        fail("index.html has no testable JavaScript")
+    for rel in re.findall(r'<link[^>]+href=["\']([^"\']+\.css)["\']', html, re.I):
+        if not rel.startswith(('https://', 'http://')) and not os.path.isfile(os.path.join(HERE, rel)):
+            fail(f"missing CSS asset: {rel}")
+    for id_ in ("overview-stats", "research-rows", "portfolio-holdings", "journal-feed",
+                "journal-rejected", "lab-company", "lab-chart", "company-drawer", "classic-frame"):
+        if f'id="{id_}"' not in html:
+            fail(f"new terminal is missing required element: {id_}")
+    if not os.path.exists(os.path.join(HERE, "classic.html")):
+        fail("original 3D globe was not preserved as classic.html")
     node = shutil.which("node")
     if not node:
         print("  Node.js not found: JavaScript check skipped")
@@ -57,7 +76,7 @@ def check_javascript():
             r = subprocess.run([node, "--check", path], capture_output=True, text=True)
             if r.returncode:
                 fail(f"JavaScript syntax error in index.html, inline <script> block {i}:\n{r.stderr.strip()}")
-    print(f"  {len(code)} inline script block(s) in index.html parse")
+    print(f"  {len(code)} local script(s) referenced by index.html parse")
 
 
 def check_pipeline():
@@ -93,6 +112,9 @@ def check_pipeline():
         expected = len(model.COMPANIES)
         if len(data.get("companies", [])) != expected:
             fail(f"data.json has {len(data.get('companies', []))} companies, nordic_margin_reversion.py has {expected}")
+        quality = data.get("meta", {}).get("quality", {})
+        if quality.get("lastFiscalYear") != model.YEARS[-1] or "portfolioExecution" not in quality:
+            fail("data freshness / execution disclosures missing")
         missing = [c["name"] for c in model.COMPANIES if c["name"] not in site.HQ]
         if missing:
             fail(f"no headquarters location in update_site.py HQ for: {', '.join(missing)}")
@@ -103,6 +125,8 @@ def check_pipeline():
             fail(f"portfolio does not add up: cash + holdings {held:,.2f} vs value {port['value']:,.2f}")
         if len(port.get("decisions", [])) < 2:
             fail("the month-end rebalance did not run")
+        if not all("reason" in t for t in port.get("trades", [])):
+            fail("trade rationale missing from decision journal")
         print(f"  {expected} companies, {len(port['holdings'])} holdings, {len(port['decisions'])} decisions, "
               f"value EUR {port['value']:,.0f}")
 

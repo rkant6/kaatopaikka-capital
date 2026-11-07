@@ -249,6 +249,21 @@ def build_site_data(results, companies, fx, updated):
                 nLong=sum(r["signal"].startswith("LONG") for r in results),
                 nShort=sum(r["signal"].startswith("SHORT") for r in results),
                 evidence=evidence_stats(companies))
+    # Make market/fundamental freshness visible separately. The price fetch does
+    # not refresh revenue, debt, EBIT, shares outstanding or corporate actions.
+    asof = datetime.strptime(updated[:10], "%Y-%m-%d")
+    ages = [(asof - datetime.strptime(d, "%Y-%m-%d")).days for d in dates]
+    meta["quality"] = dict(
+        quoteSource="yfinance / Yahoo Finance (closing prices, potentially delayed)",
+        fundamentalSource="Manual standardized-statement snapshot; verify with issuer filings",
+        lastFiscalYear=m.YEARS[-1],
+        priceAgesDays=dict(oldest=max(ages), newest=min(ages)),
+        quotesOlderThanFiveDays=sum(age > 5 for age in ages),
+        flaggedCompanies=sum(r["flag"] == "Y" for r in results),
+        priceDatesVary=len(set(dates)) > 1,
+        returnBasis="Close-to-close prices, EUR-converted; dividends excluded",
+        portfolioExecution="Hypothetical same-close fills, not attainable using signals only known after that close",
+    )
     return dict(companies=out, meta=meta)
 
 
@@ -275,7 +290,7 @@ def _price_eur(companies, fx):
     return {c["name"]: c["mkt"][0] / fx.get(c["trd"], 1.0) for c in companies}
 
 
-def _rebalance(port, weights, px, date, label):
+def _rebalance(port, weights, px, date, label, why=None):
     hold = {h["name"]: h for h in port["holdings"]}
     value = port["cash"] + sum(h["shares"] * px[h["name"]] for h in hold.values())
     cur = {n: h["shares"] * px[n] for n, h in hold.items()}
@@ -295,7 +310,8 @@ def _rebalance(port, weights, px, date, label):
             basis += delta
         if abs(delta) > 0.01:
             trades.append(dict(date=date, name=n, id=HQ[n][3], side="BUY" if delta > 0 else "SELL",
-                               eur=round(abs(delta), 2), price_eur=round(px[n], 4), note=label))
+                               eur=round(abs(delta), 2), price_eur=round(px[n], 4), note=label,
+                               reason=(why or {}).get(n, "No longer selected at this rebalance")))
         if tgt > 0.01:
             new_hold.append(dict(name=n, id=HQ[n][3], shares=tgt / px[n], cost=basis))
     port["holdings"] = new_hold
@@ -312,14 +328,15 @@ def update_portfolio(port, results, companies, fx, date, updated):
     port["targets"] = [dict(id=HQ[n][3], name=n, weight=wt, eur=None, reason=why[n], ccy=by[n]["trd"],
                             ref_price=by[n]["mkt"][0]) for n, wt in sorted(w.items(), key=lambda kv: -kv[1])]
     if port["status"] == "pending":
-        _rebalance(port, w, px, date, "Decision 1: initial buy")
+        _rebalance(port, w, px, date, "Decision 1: initial buy", why)
         port["status"], port["inception"], port["last_rebalance"] = "live", date, date[:7]
         port["bench_base"] = px
     elif date[:7] != port["last_rebalance"]:
         n = len(port["decisions"]) + 1
-        trades = _rebalance(port, w, px, date, f"Decision {n}: monthly rebalance")
+        trades = _rebalance(port, w, px, date, f"Decision {n}: monthly rebalance", why)
         port["decisions"].append(dict(n=n, date=date, type="monthly rebalance",
-                                      orders=[dict(name=t["name"], id=t["id"], side=t["side"], eur=t["eur"]) for t in trades]))
+                                      orders=[dict(name=t["name"], id=t["id"], side=t["side"],
+                                                   eur=t["eur"], reason=t["reason"]) for t in trades]))
         port["last_rebalance"] = date[:7]
     value = port["cash"] + sum(h["shares"] * px[h["name"]] for h in port["holdings"])
     base = port["bench_base"]

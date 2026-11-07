@@ -1,6 +1,6 @@
 # Kaatopaikka Capital – ohjeet Claudelle
 
-Tämä repo on Kaatopaikka Capitalin hahmotelmasalkun nettisivu. Sivulla on 3D-maapallo, jolla näkyy 30 pohjoismaista teollisuusyhtiötä, margin reversion -mallin signaalit ja 10 000 euron paperisalkku.
+Tämä repo on Kaatopaikka Capital Investment Terminal: 30 pohjoismaista teollisuusyhtiötä, margin reversion -malli ja 10 000 euron paperisalkku. Uudessa terminaalissa on analyysit, perustelut, sijoituspäätösten journal, margin lab ja alkuperäinen 3D-maapallo.
 
 Kaksi ihmistä muokkaa repoa omilla Claude-istunnoillaan, usein samaan aikaan. Siksi jokainen muutos tehdään omaan branchiin ja pull requestiin. Vastaa käyttäjälle suomeksi.
 
@@ -15,18 +15,23 @@ Kaksi ihmistä muokkaa repoa omilla Claude-istunnoillaan, usein samaan aikaan. S
 
 | Tiedosto | Sisältö |
 |---|---|
-| `index.html` | Koko sivu yhdessä tiedostossa: CSS, JavaScript, upotettu varadata ja maapallon geodata. three.js r128 (cdnjs) ja OrbitControls (jsdelivr, three@0.128.0). |
+| `index.html` | Terminaalin semanttinen HTML ja seitsemän sivun rakenne. |
+| `assets/terminal.css` | Terminaalin tyylit, responsiiviset näkymät ja design tokenit. |
+| `assets/terminal.js` | JSON-datan lataus, dashboard, screener, sijoitusmuistiot, journal, margin lab ja kaaviot. |
+| `classic.html` | Alkuperäinen suuri 3D-maapallosivu. three.js r128 ja upotettu GEO-data. |
 | `update_site.py` | Päivittäinen skripti. Tiedoston alussa ovat `HQ` (pääkonttorit ja koordinaatit), `STRATEGY` (salkun säännöt), `RULES` (sivulla näkyvät säännöt) ja `SIM` (Monte Carlo). |
 | `nordic_margin_reversion.py` | Malli. Sisältää `COMPANIES` (tilinpäätösdata FY2013–FY2025 ja markkinadata), `ASSUMPTIONS`, `compute_model` ja `build_workbook` (Excel, 20 sheetiä kaavoineen). |
 | `check_site.py` | Tarkistukset ennen julkaisua. Ajaa testin väliaikaisessa kansiossa. |
 | `data.json`, `portfolio.json`, `simulation.json`, `model.xlsx` | **Botin tiedostot.** Päivittäinen ajo kirjoittaa nämä. |
 
-## index.html
+## Käyttöliittymä ja data
 
-- Rivit, jotka alkavat `const EMB_DATA`, `const EMB_PORT`, `const EMB_SIM` ja `const GEO`, ovat upotettua dataa. `GEO`-rivi on yli 500 000 merkkiä pitkä. Älä lue tai tulosta näitä rivejä. Etsi kohdat `grep -n`:llä ja lue muut rivit offsetilla.
-- Verkossa sivu lataa `data.json`, `portfolio.json` ja `simulation.json`. Upotettua dataa se käyttää vain varalla, esimerkiksi tiedostona avattuna.
-- Välilehdet ovat Ranking, Company, Portfolio ja How it works. Maapallolla on yhtiöiden pylväät signaalin väreissä ja neljä roska-autoa.
-- Teema on musta ja tumma violetti. Pidä se, ellei käyttäjä pyydä muuta.
+- Uusi `index.html` lataa ulkoiset `assets/terminal.css` ja `assets/terminal.js`. Pidä HTML, CSS ja JavaScript erillään; älä lisää valtavia upotettuja datasettejä.
+- Vanhan `classic.html`-sivun rivit `const EMB_DATA`, `const EMB_PORT`, `const EMB_SIM` ja `const GEO` sisältävät suurta varadataa. GEO-rivi on yli 500 000 merkkiä; älä tulosta sitä kokonaan. Säilytä klassinen näkymä toimivana.
+- Terminaali hakee verkosta `data.json`, `portfolio.json` ja `simulation.json`, jotka päivittäinen botti kirjoittaa. Käyttöliittymä ei saa tehdä kaupankäyntipäätöksiä eikä tallentaa mallin tuloksia.
+- Kaikki yritysmuistion perustelut on johdettava julkaistun laskennan numeroista. Älä generoi keksittyjä yritysuutisia, katalyyttejä tai sijoitussuosituksia.
+- Tuo näkyviin hintoihin liittyvät päivämäärät, datan vanhentumisen ja mallin oletukset. Älä esitä paperisalkkua oikeana tuottona tai Monte Carlo -tuloksia empiirisinä ennusteina.
+- Teema on tumma, violetti ja hillityn vihreä. Noudata nykyisiä design-tokeneita ja responsiivisuutta.
 
 ## Säännöt
 
