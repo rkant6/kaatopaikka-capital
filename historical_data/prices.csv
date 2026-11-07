@@ -1,1 +1,1 @@
-company,date,close,dividend,split_factor,fx_to_eur,source_url
+company,date,close,dividend,split_factor,fx_to_eur,reporting_fx_to_eur,price_currency,source_url,fx_source_url
