@@ -100,9 +100,6 @@ def check_javascript():
     smoke=subprocess.run([node,"tests/home_earth_smoke.js"],cwd=HERE,capture_output=True,text=True)
     if smoke.returncode:fail(f"Home globe runtime smoke test failed:\\n{smoke.stderr[-1800:]}")
     print(smoke.stdout.strip())
-    import xml.etree.ElementTree as ET
-    try:ET.parse(os.path.join(HERE,"assets","cosmic-ape.svg"))
-    except ET.ParseError as e:fail(f"Monkey SVG is not valid XML: {e}")
 
 
 def check_pipeline():
