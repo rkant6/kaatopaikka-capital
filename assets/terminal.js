@@ -140,11 +140,16 @@
     return null;
   }
   function sendGlobeTime(iso,meteor=null) {
-    const frame=$('#home-frame');if(!frame?.contentWindow)return;
     const current=iso>=state.data?.meta?.priceTo;
-    const snap=!current?lastReplaySnapshot(iso):null;
-    frame.contentWindow.postMessage({type:'KC_GLOBE_TIME',date:iso,mode:current?'current':snap?'verified':'unverified',
-      companies:current?null:snap?.companies||null,event:meteor},location.origin);
+    const verified=state.history?.validated_inputs===true && Array.isArray(state.history.history);
+    const snap=verified&&!current?lastReplaySnapshot(iso):null;
+    const packet={type:'KC_GLOBE_TIME',date:iso,mode:current?'current':snap?'verified':'unverified',
+      companies:current?null:snap?.companies||null,event:meteor};
+    // Home canvas is the primary renderer: it remains visible even when
+    // third-party Three.js or WebGL are unavailable.
+    window.KCHomeEarth?.setSnapshot(packet);
+    const frame=$('#home-frame'); // optional legacy iframe, not required
+    if(frame?.contentWindow)frame.contentWindow.postMessage(packet,location.origin);
   }
   function setTimelineDay(day,opts={}) {
     const slider=$('#time-date-range');if(!slider)return;
@@ -208,7 +213,7 @@
       state.playDayFloat=Number(range.value);state.playLastFrame=null;state.playRaf=requestAnimationFrame(playTime);
       $('#time-play').textContent='Ⅱ Pause replay';$('#time-play').setAttribute('aria-pressed','true');
     });
-    $('#home-frame').addEventListener('load',()=>{if(state.replayDay)sendGlobeTime(state.replayDay);});
+    $('#home-frame')?.addEventListener('load',()=>{if(state.replayDay)sendGlobeTime(state.replayDay);});
     window.addEventListener('message',event=>{
       if(event.origin===location.origin&&event.source===$('#home-frame')?.contentWindow&&event.data?.type==='KC_GLOBE_READY'){
         if(state.replayDay)sendGlobeTime(state.replayDay);

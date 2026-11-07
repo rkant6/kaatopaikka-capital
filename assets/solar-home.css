@@ -72,3 +72,20 @@
 @keyframes ape-flame-dance{from{transform:scaleY(.77)}to{transform:scaleY(1.3)}}
 @media(max-width:720px){.ape-actor{right:-10%;width:53%;height:81%;bottom:-8%}.ape-rocket{left:43%;height:42%;width:16%}.ape-caption{font-size:7px;bottom:10px;left:8px;max-width:50%}.ape-motion-toggle{right:8px;bottom:8px;padding:6px 8px;font-size:9px}.ape-boom{font-size:13px}}
 @media(prefers-reduced-motion:reduce){.ape-theater *{animation:none!important}.ape-actor{opacity:1;transform:none}.ape-rocket{display:none}.ape-boom{display:none}}
+
+/* Reliable homepage Earth: own canvas, always rendered locally, even offline. */
+.planet-canvas{height:clamp(495px,58vh,680px);min-height:495px;isolation:isolate}
+.planet-canvas::before{content:"";position:absolute;left:19%;top:17%;width:min(61%,440px);aspect-ratio:1;border-radius:50%;background:radial-gradient(circle at 37% 29%,#376473,#132c41 54%,#07141f 84%,#050e17);box-shadow:inset -21px -8px 32px #040a13,0 0 30px #5aa6d225;z-index:0;pointer-events:none;opacity:.8;transition:opacity .25s}
+.planet-canvas.has-renderer::before{opacity:0}
+#home-earth-canvas{position:absolute;inset:0;display:block;width:100%;height:100%;z-index:1;touch-action:none;cursor:grab}
+#home-earth-canvas:active{cursor:grabbing}
+.planet-canvas .planet-notation{z-index:6;top:auto;bottom:17px;left:17px;max-width:49%;font-size:8px;line-height:1.65}
+.ape-theater{z-index:4}
+.ape-actor{top:5%;bottom:auto;right:-2%;width:clamp(208px,43%,390px);height:87%;opacity:1}
+.ape-actor img{max-height:100%;max-width:100%;object-fit:contain;object-position:center}
+.ape-rocket{top:2%;left:49%;height:48%;opacity:0}
+.ape-caption{bottom:46px;left:auto;right:13px;max-width:45%;text-align:right;z-index:5}
+.ape-motion-toggle{z-index:7}
+@media(max-width:980px){.planet-canvas{height:520px;min-height:520px}}
+@media(max-width:620px){.planet-canvas{height:400px;min-height:400px}.ape-actor{top:8%;right:-4%;width:56%;height:78%}.ape-rocket{top:4%;left:43%;height:39%}.ape-caption{font-size:6px;bottom:48px}.planet-canvas .planet-notation{font-size:7px;max-width:45%;bottom:9px;left:8px}}
+@media(prefers-reduced-motion:reduce){.planet-canvas::before{transition:none}}
