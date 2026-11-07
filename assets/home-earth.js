@@ -89,7 +89,10 @@ function init(){
    const la=c.lat*RAD,ll=c.lon*RAD,ry=Math.sin(la),r=Math.cos(la),xx=r*Math.sin(ll),zz=r*Math.cos(ll);
    const pX=xx*cosL-zz*sinL,fo=xx*sinL+zz*cosL,depth=ry*sl0+fo*cl0;
    if(depth<=.02)continue;
-   const sig=packet.mode==='unverified'?'LOCATION':String(c.signal||'').split(' ')[0];
+   const historical=packet.mode==='verified'&&Array.isArray(packet.companies)
+     ?packet.companies.find(row=>row.id===c.id):null;
+   const sig=(packet.mode==='unverified'?'LOCATION':
+     packet.mode==='verified'?historical?.signal||'LOCATION':c.signal||'LOCATION').split(' ')[0];
    const colors={LONG:'#56e8b7',WATCH:'#ffd47a',SHORT:'#fd777c',NEUTRAL:'#b4c2cf'};
    ctx.fillStyle=colors[sig]||'#8095a2';ctx.shadowColor=ctx.fillStyle;ctx.shadowBlur=10;
    ctx.beginPath();ctx.arc(cx+radius*pX,cy-radius*(ry*cl0-fo*sl0),2.8,0,TAU);ctx.fill();ctx.shadowBlur=0;
