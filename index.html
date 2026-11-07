@@ -11,9 +11,9 @@
   <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Space+Grotesk:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="assets/terminal.css">
   <link rel="stylesheet" href="assets/terminal-bloomberg.css">
-  <link rel="stylesheet" href="assets/solar-home.css?v=blue-marble-v1">
+  <link rel="stylesheet" href="assets/solar-home.css?v=blue-marble-zoom-v2">
   <script src="assets/valuation-engine.js" defer></script>
-  <script src="assets/home-earth.js?v=blue-marble-v1" defer></script>
+  <script src="assets/home-earth.js?v=blue-marble-zoom-v2" defer></script>
   <script src="assets/terminal.js" defer></script>
 </head>
 <body>
@@ -57,9 +57,15 @@
             <div class="planet-head"><div><div class="eyebrow">EARTH / NORDIC MARKETS / 2024–TODAY</div><h2>Markets on a moving planet<span class="period">.</span></h2><p>Rotate the Earth, explore the sunlit and night-side hemispheres, or travel back through the investment timeline.</p></div><span class="planet-live" id="planet-data-state">HISTORICAL REPLAY · LOADING</span></div>
             <div class="planet-grid">
               <div class="planet-canvas">
-                <canvas id="home-earth-canvas" role="img" aria-label="Photorealistic Earth with NASA satellite surface, night-side city lights and clouds, rotating with pointer drag and wheel zoom"></canvas>
+                <canvas id="home-earth-canvas" tabindex="0" role="img" aria-label="Photorealistic Earth with NASA satellite surface, night-side city lights and clouds, rotating with pointer drag and wheel zoom"></canvas>
                 <canvas id="home-earth-overlay" aria-hidden="true"></canvas>
-                <span class="planet-notation">DRAG TO ROTATE <span>·</span> SCROLL TO ZOOM <span>·</span> SOLAR LIGHTING: UTC</span></div>
+                <span class="planet-notation">DRAG TO ROTATE <span>·</span> SCROLL / PINCH TO ZOOM <span>·</span> SOLAR LIGHTING: UTC</span>
+                <div class="earth-zoom-controls" role="group" aria-label="Earth zoom controls">
+                  <button id="earth-zoom-in" class="earth-zoom-button" type="button" aria-label="Zoom in on Earth" title="Zoom in (+)">+</button>
+                  <output id="earth-zoom-level" class="earth-zoom-level" aria-live="off" aria-label="Earth zoom level">100%</output>
+                  <button id="earth-zoom-out" class="earth-zoom-button" type="button" aria-label="Zoom out from Earth" title="Zoom out (−)">−</button>
+                  <button id="earth-zoom-reset" class="earth-zoom-reset" type="button" title="Reset Earth view">RESET</button>
+                </div></div>
               <div class="time-desk">
                 <div class="time-desk-top"><span class="eyebrow">TIME MACHINE</span><span class="time-badge" id="time-mode">ASTRONOMICAL REPLAY</span></div>
                 <div class="time-date" id="time-date-label">—</div>

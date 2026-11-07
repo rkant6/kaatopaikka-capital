@@ -58,3 +58,15 @@
 .planet-canvas.earth-textured:before{opacity:0}
 .planet-canvas.earth-texture-missing:before{opacity:.9}
 .time-footnote a{color:#dfab5f;text-underline-offset:3px}
+
+/* Earth navigation: high-contrast, consistent Bloomberg-terminal zoom deck. */
+.earth-zoom-controls{position:absolute;right:16px;bottom:18px;z-index:8;display:flex;flex-direction:column;align-items:center;gap:5px;padding:7px 6px;border:1px solid rgba(141,164,184,.28);border-radius:6px;background:rgba(9,17,25,.90);box-shadow:0 7px 24px rgba(0,0,0,.3);backdrop-filter:blur(8px)}
+.earth-zoom-button{width:36px;height:36px;min-height:36px;border:1px solid #53616c;background:#17232d;color:#ffb342;border-radius:3px;font:700 21px/1 "IBM Plex Mono",monospace;cursor:pointer;transition:background .14s,border-color .14s}
+.earth-zoom-button:hover:not(:disabled){background:#2e353d;border-color:#ffa833}
+.earth-zoom-button:focus-visible,.earth-zoom-reset:focus-visible{outline:2px solid #ffb342;outline-offset:2px}
+.earth-zoom-button:disabled,.earth-zoom-reset:disabled{opacity:.35;cursor:default}
+.earth-zoom-level{display:block;min-width:51px;padding:4px 2px;color:#e4ebef;text-align:center;font:600 11px "IBM Plex Mono",monospace;font-variant-numeric:tabular-nums}
+.earth-zoom-reset{height:27px;padding:0 7px;border:1px solid #52606c;background:#15202a;color:#a8b8c5;border-radius:3px;font:600 9px "IBM Plex Mono",monospace;letter-spacing:.05em;cursor:pointer}
+.earth-zoom-reset:hover:not(:disabled){background:#2b343d;color:#ffbc5c}
+#home-earth-canvas:focus-visible{outline:2px solid #ffb342;outline-offset:-3px}
+@media(max-width:620px){.earth-zoom-controls{right:9px;bottom:9px;padding:5px 4px;gap:3px}.earth-zoom-button{width:33px;height:33px;min-height:33px;font-size:20px}.earth-zoom-reset{height:25px;padding:0 5px;font-size:8px}.earth-zoom-level{min-width:42px;font-size:10px}}
