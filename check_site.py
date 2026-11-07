@@ -59,11 +59,14 @@ def check_javascript():
         if not rel.startswith(('https://', 'http://')) and not os.path.isfile(os.path.join(HERE, rel)):
             fail(f"missing CSS asset: {rel}")
     for id_ in ("overview-stats", "research-rows", "portfolio-holdings", "journal-feed",
-                "journal-rejected", "lab-company", "lab-chart", "company-drawer", "classic-frame"):
+                "journal-rejected", "lab-company", "lab-chart", "lab-sensitivity",
+                "lab-validation", "company-drawer", "classic-frame"):
         if f'id="{id_}"' not in html:
             fail(f"new terminal is missing required element: {id_}")
     if not os.path.exists(os.path.join(HERE, "classic.html")):
         fail("original 3D globe was not preserved as classic.html")
+    if "classic.html?embed=1" not in html:
+        fail("3D globe embed must use dedicated no-overlap mode")
     node = shutil.which("node")
     if not node:
         print("  Node.js not found: JavaScript check skipped")
@@ -127,6 +130,27 @@ def check_pipeline():
             fail("the month-end rebalance did not run")
         if not all("reason" in t for t in port.get("trades", [])):
             fail("trade rationale missing from decision journal")
+        # Validate every published baseline against the same ten-year DCF
+        # implemented in the client; these are genuinely recalculated values.
+        valuations = data["companies"]
+        if not all("valuation" in c and "netClaims" in c["valuation"] for c in valuations):
+            fail("the published valuation snapshot is incomplete")
+        node = shutil.which("node")
+        if node:
+            program = (
+                "const fs=require('fs');"
+                "const engine=require('./assets/valuation-engine.js');"
+                "const data=JSON.parse(fs.readFileSync('data.json','utf8'));"
+                "for(const c of data.companies){"
+                " const v=engine.calculate(c.valuation);"
+                " if(!v.valid || Math.abs(v.upside-c.fairUp)>1e-7)"
+                " {throw Error(c.name+': DCF mismatch '+v.upside+' vs '+c.fairUp+' '+v.error)}}"
+                "console.log('  DCF baselines reconcile for '+data.companies.length+' companies');"
+            )
+            result = subprocess.run([node,"-e",program],cwd=work,capture_output=True,text=True)
+            if result.returncode:
+                fail(f"browser DCF differs from Python's published values:\n{result.stderr[-2400:]}")
+            print(result.stdout.strip())
         print(f"  {expected} companies, {len(port['holdings'])} holdings, {len(port['decisions'])} decisions, "
               f"value EUR {port['value']:,.0f}")
 
