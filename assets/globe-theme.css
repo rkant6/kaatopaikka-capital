@@ -1,0 +1,76 @@
+/* Standalone globe and embedded globe mode. The parent terminal supplies the
+   research panel; the embed must not render a nested copy of that interface. */
+:root {
+  --bg:#050709;
+  --bg-2:#11150f;
+  --panel:#11171bdc;
+  --line:#38414a;
+  --ink:#f3f1eb;
+  --muted:#a4adb7;
+  --accent:#ffad32;
+  --accent-hot:#ffc46c;
+  --long:#52dca9;
+  --short:#ff7c87;
+  --watch:#ffbd55;
+  --neutral:#b1bbc9;
+  --excl:#777f8b;
+}
+body {background:var(--bg)}
+.stage {background:radial-gradient(ellipse 65% 80% at 53% 45%,#18212a 0%,#0b1118 49%,#050709 85%)}
+header.top {background:linear-gradient(180deg,#10151b,#090d12)}
+h1 span {background:linear-gradient(90deg,#f8f0de,#ffb84f);background-clip:text;-webkit-background-clip:text;color:transparent}
+.eyebrow {color:var(--accent)}
+.logo {filter:drop-shadow(0 0 6px #d58d2744)}
+.kpi {background:#1b211c;border-color:#485047}
+.kpi b {color:#fff2d9}
+.hud .card {background:#0d1419eb;border:1px solid #37414a;border-radius:7px;backdrop-filter:blur(10px)}
+.seg {border-color:#465058;border-radius:4px}
+.seg button[aria-pressed="true"] {background:#4c3415;color:#ffe1b1}
+.seg button:hover,.btn:hover {background:#242a2d;color:white}
+.btn {border-radius:4px}
+.btn.primary {background:#3b2916;border-color:#a36e2b;color:#ffdcaa}
+.tip {background:#0c1217f5;border-color:#9d7136;border-radius:6px;box-shadow:0 12px 40px #0009}
+.lbl {background:#101821e8;border-color:#46515b;border-radius:4px}
+.lbl.sel {border-color:#ffb54a;box-shadow:0 0 0 1px #ffb54a,0 0 18px #ffb54a55}
+.chip {border-radius:4px}
+.chip[aria-pressed="true"] {background:#49321b;border-color:#ae7838}
+.tabs button[aria-selected="true"] {border-bottom-color:#ffad32}
+ol.list li:hover,ol.list li.hl {background:#202b2d}
+ol.list li.on {background:#302a20;box-shadow:inset 2px 0 0 #ffad32}
+.m,.steps li {background:#171e22}
+.m.big {background:linear-gradient(90deg,#393021,#182026);border-color:#755b39}
+.chart .ln {stroke:#ffb555}
+.chart .pt {fill:#ffb555}
+.chart .win {fill:#ffad3214}
+.chart .gridl {stroke:#46505a}
+.prose p,.rules {color:#d5dce4}
+.note {color:#ffdb9a}
+a {color:#ffc46c}
+
+/* Embedded mode: one globe canvas, never a second navigation, KPI header or
+   ranking panel. This fixes the overlapping content on the parent Globe tab. */
+html.embed,html.embed body {height:100%;width:100%;overflow:hidden}
+html.embed .app {height:100vh!important;width:100%;min-height:0!important;display:grid!important;grid-template-columns:minmax(0,1fr)!important;grid-template-rows:minmax(0,1fr)!important}
+html.embed header.top,html.embed aside.panel {display:none!important}
+html.embed .stage {grid-column:1!important;grid-row:1!important;min-height:0!important;width:100%;height:100%}
+html.embed .hud {left:12px;right:12px;bottom:12px;max-width:none;width:auto;display:grid;grid-template-columns:minmax(0,1fr) auto;gap:9px;align-items:end;pointer-events:none}
+html.embed .hud>* {pointer-events:auto}
+html.embed .hud .ctrl {grid-column:1;grid-row:1;max-width:715px;display:flex;gap:6px;align-items:center;padding:8px 10px}
+html.embed .hud .legend {grid-column:2;grid-row:1;justify-content:flex-end;max-width:330px;padding:10px 12px}
+html.embed .hud .foot {display:none!important}
+html.embed .ctrl .lab {font-size:10px}
+html.embed .ctrl button {font-size:11px;padding:6px 9px}
+html.embed .seg {flex-wrap:wrap}
+html.embed .labels .lbl {font-size:10px;max-width:150px;overflow:hidden;text-overflow:ellipsis}
+@media(max-width:1050px){
+  html.embed .hud {display:flex;align-items:stretch;flex-direction:column}
+  html.embed .hud .legend {display:none}
+  html.embed .hud .ctrl {max-width:100%;justify-content:center}
+}
+@media(max-width:620px){
+  html.embed .hud {left:8px;right:8px;bottom:8px}
+  html.embed .hud .ctrl {padding:7px;gap:4px}
+  html.embed .ctrl .lab {display:none}
+  html.embed .ctrl button {font-size:10px;padding:6px}
+  html.embed #world {display:none}
+}
