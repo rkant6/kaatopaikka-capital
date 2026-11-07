@@ -226,6 +226,7 @@ def evidence_stats(companies):
 
 def build_site_data(results, companies, fx, updated):
     by = {c["name"]: c for c in companies}
+    assumptions = m.default_assumptions()
     out = []
     for r in results:
         c = by[r["name"]]
@@ -240,7 +241,17 @@ def build_site_data(results, companies, fx, updated):
             revUp=r["rev_upside"], fairUp=r["upside"], evEbit=r["ev"] / (r["rev_ttm"] * r["ttm"]),
             evNorm=r["ev"] / (r["rev_ttm"] * r["norm"]), score=r["score"], rank=r["rank"],
             signal=r["signal"], flag=r["flag"], note=c["note"], trap=r["trap"], start=r["start"],
-            nObs=r["n"], margins=[None if v is None else v / 100 for v in c["mar"]], disc=r["wacc"]))
+            nObs=r["n"], margins=[None if v is None else v / 100 for v in c["mar"]], disc=r["wacc"],
+            valuation=dict(
+                revenueTtm=r["rev_ttm"], marketCap=r["mcap"],
+                netClaims=r["ev"] - r["mcap"], enterpriseValue=r["ev"],
+                currentMargin=r["cur"], normalizedMargin=r["norm"],
+                persistence=r["phi"], taxRate=r["tax"],
+                discountRate=r["wacc"], fundamentalWacc=r["wacc_fund"],
+                growthExplicit=assumptions["GrowthExplicit"],
+                growthTerminal=assumptions["GrowthTerminal"], ronic=assumptions["RONIC"],
+                fairEquity=r["fair_ev"] - (r["ev"] - r["mcap"]))
+        ))
     dates = sorted(c["mkt"][1] for c in companies)
     meta = dict(snapshot=m.SNAPSHOT_DATE, updated=updated, priceFrom=dates[0], priceTo=dates[-1],
                 years=m.YEARS, fx={k: round(v, 4) for k, v in fx.items() if k != "EUR"},
