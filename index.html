@@ -11,9 +11,9 @@
   <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Space+Grotesk:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="assets/terminal.css">
   <link rel="stylesheet" href="assets/terminal-bloomberg.css">
-  <link rel="stylesheet" href="assets/solar-home.css?v=20261107f">
+  <link rel="stylesheet" href="assets/solar-home.css?v=blue-marble-v1">
   <script src="assets/valuation-engine.js" defer></script>
-  <script src="assets/home-earth.js?v=20261107e" defer></script>
+  <script src="assets/home-earth.js?v=blue-marble-v1" defer></script>
   <script src="assets/terminal.js" defer></script>
 </head>
 <body>
@@ -57,7 +57,8 @@
             <div class="planet-head"><div><div class="eyebrow">EARTH / NORDIC MARKETS / 2024–TODAY</div><h2>Markets on a moving planet<span class="period">.</span></h2><p>Rotate the Earth, explore the sunlit and night-side hemispheres, or travel back through the investment timeline.</p></div><span class="planet-live" id="planet-data-state">HISTORICAL REPLAY · LOADING</span></div>
             <div class="planet-grid">
               <div class="planet-canvas">
-                <canvas id="home-earth-canvas" role="img" aria-label="Interactive, solar-lit Earth that rotates with pointer drag and zooms with the mouse wheel"></canvas>
+                <canvas id="home-earth-canvas" role="img" aria-label="Photorealistic Earth with NASA satellite surface, night-side city lights and clouds, rotating with pointer drag and wheel zoom"></canvas>
+                <canvas id="home-earth-overlay" aria-hidden="true"></canvas>
                 <span class="planet-notation">DRAG TO ROTATE <span>·</span> SCROLL TO ZOOM <span>·</span> SOLAR LIGHTING: UTC</span></div>
               <div class="time-desk">
                 <div class="time-desk-top"><span class="eyebrow">TIME MACHINE</span><span class="time-badge" id="time-mode">ASTRONOMICAL REPLAY</span></div>
@@ -68,7 +69,7 @@
                 <div class="time-actions"><button class="button button-primary" id="time-play" type="button" aria-pressed="false">▶ Play 2024 → today</button><button class="button button-ghost" id="time-today" type="button">Today</button></div>
                 <div class="time-fact"><span class="time-fact-icon" aria-hidden="true">◉</span><div><strong id="time-summary-title">Checking historical evidence</strong><p id="time-summary">Only source-verified filings and prices can produce historical return figures.</p></div></div>
                 <div class="time-event-list" id="time-events" aria-live="polite"></div>
-                <div class="time-footnote">The Sun's position uses the selected UTC date and an accelerated day/night cycle. Meteor effects appear only after verified negative events. No future accounting data enter the historical model.</div>
+                <div class="time-footnote">The Sun follows the selected UTC date and an accelerated day/night cycle. Earth imagery is a NASA Blue Marble composite, <em>not</em> a real-time satellite feed. Night lights and clouds are illustrative layers. Verified negative events alone can trigger meteors; no future accounting data enter historical signals. <a href="assets/EARTH_CREDITS.md" target="_blank" rel="noopener">Imagery credits ↗</a></div>
               </div>
             </div>
           </section>
