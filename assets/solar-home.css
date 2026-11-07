@@ -46,3 +46,15 @@
 .planet-canvas{background:radial-gradient(ellipse at 43% 43%,#17232c 0%,#0c131a 56%,#070b10 100%)}
 .planet-canvas .planet-notation{top:14px;bottom:auto;left:16px;max-width:min(70%,430px);padding:7px 10px;background:rgba(9,16,22,.82);border-color:rgba(110,133,148,.27);letter-spacing:.065em}
 @media(max-width:620px){.planet-canvas .planet-notation{top:10px;left:10px;bottom:auto;max-width:88%;font-size:7px}}
+
+/* Blue Marble renderer — two seamless canvases, no square texture artifacts. */
+.planet-canvas{background:radial-gradient(ellipse at 45% 49%,#111d2a 0%,#09121c 48%,#070d15 100%);contain:paint}
+.planet-canvas::before{left:19%;top:12%;width:min(62%,490px);opacity:.46}
+#home-earth-canvas,#home-earth-overlay{position:absolute;inset:0;display:block;width:100%;height:100%;border:0;image-rendering:auto}
+#home-earth-canvas{z-index:1;touch-action:none;cursor:grab}
+#home-earth-canvas:active{cursor:grabbing}
+#home-earth-overlay{z-index:2;pointer-events:none}
+.planet-canvas .planet-notation{z-index:3;background:rgba(7,14,23,.85);border-color:rgba(114,159,190,.25)}
+.planet-canvas.earth-textured:before{opacity:0}
+.planet-canvas.earth-texture-missing:before{opacity:.9}
+.time-footnote a{color:#dfab5f;text-underline-offset:3px}
