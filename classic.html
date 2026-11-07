@@ -147,7 +147,7 @@ ol.list li.on{background:rgba(224,64,251,.13);box-shadow:inset 2px 0 0 var(--acc
 .params td{padding:5px 0;border-bottom:1px solid rgba(176,124,255,.1)}
 .params td:last-child{text-align:right;font-family:var(--f-mono);font-variant-numeric:tabular-nums}
 a{color:#d8b4fe}
-.kc{display:inline-block;font-family:var(--f-mono);font-size:9.5px;font-weight:700;color:#f5d0fe;background:rgba(224,64,251,.18);border:1px solid rgba(224,64,251,.45);border-radius:5px;padding:0 4px;vertical-align:2px;margin-left:4px}
+.kc{display:inline-block;font-family:var(--f-mono);font-size:9.5px;font-weight:700;color:#ffead1;background:rgba(224,64,251,.18);border:1px solid rgba(224,64,251,.45);border-radius:5px;padding:0 4px;vertical-align:2px;margin-left:4px}
 .status{display:inline-flex;align-items:center;gap:6px;font-family:var(--f-mono);font-size:11px;font-weight:700;padding:3px 9px;border-radius:999px;border:1px solid}
 .status.live{color:var(--long);border-color:rgba(94,234,212,.45);background:rgba(94,234,212,.08)}
 .status.pending{color:var(--watch);border-color:rgba(251,191,36,.45);background:rgba(251,191,36,.08)}
@@ -178,13 +178,15 @@ table.hold tr[data-id]:hover td{background:rgba(168,85,247,.08)}
 }
 @media (prefers-reduced-motion: reduce){ .lbl{transition:none} }
 </style>
+<link rel="stylesheet" href="assets/globe-theme.css">
+<script>if(new URLSearchParams(location.search).has("embed"))document.documentElement.classList.add("embed");</script>
 </head>
 <body>
 <div class="app">
   <header class="top">
     <div class="brand">
       <div class="eyebrow">portfolio draft · nordic industrials · margin reversion</div>
-      <h1><svg class="logo" viewBox="0 0 32 24" aria-hidden="true"><rect x="1" y="5" width="18" height="12" rx="2" fill="#7c3aed"/><rect x="1" y="11" width="18" height="2" fill="#e9d5ff"/><path d="M20 9h6l4 4v4H20z" fill="#f0abfc"/><rect x="23" y="10.5" width="3" height="3" fill="#2a1747"/><circle cx="7" cy="19" r="3" fill="#0c0716" stroke="#c4b5fd" stroke-width="1.4"/><circle cx="25" cy="19" r="3" fill="#0c0716" stroke="#c4b5fd" stroke-width="1.4"/><rect x="22" y="6" width="3" height="2" rx="1" fill="#fbbf24"/></svg><span>Kaatopaikka Capital</span></h1>
+      <h1><svg class="logo" viewBox="0 0 32 24" aria-hidden="true"><rect x="1" y="5" width="18" height="12" rx="2" fill="#df8a2d"/><rect x="1" y="11" width="18" height="2" fill="#ffe7c0"/><path d="M20 9h6l4 4v4H20z" fill="#ffd5a8"/><rect x="23" y="10.5" width="3" height="3" fill="#253440"/><circle cx="7" cy="19" r="3" fill="#0a1016" stroke="#ffe1b1" stroke-width="1.4"/><circle cx="25" cy="19" r="3" fill="#0a1016" stroke="#ffe1b1" stroke-width="1.4"/><rect x="22" y="6" width="3" height="2" rx="1" fill="#fbbf24"/></svg><span>Kaatopaikka Capital</span></h1>
     </div>
     <div class="kpis" id="kpis"></div>
   </header>
@@ -386,7 +388,7 @@ function renderDetail(c){
     <div class="m"><small>Fair-value upside (fade DCF)</small><b class="${cls(c.fairUp)}">${spct(c.fairUp)}</b></div>
     <div class="m"><small>Market cap</small><b>€${c.mcapEur>=10?c.mcapEur.toFixed(0):c.mcapEur.toFixed(1)} bn</b></div>
   </div>
-  ${held(c)?`<div class="note" style="border-color:rgba(224,64,251,.4);background:rgba(224,64,251,.08);color:#f5d0fe">Kaatopaikka Capital ${PORT.status==="live"?"holds":"will buy"} ${pct(holding(c).weight,1)} of the portfolio${PORT.status==="live"?` · €${Math.round(holding(c).value).toLocaleString("en-GB")} · ${spct(holding(c).ret)} since purchase`:""}.</div>`:""}
+  ${held(c)?`<div class="note" style="border-color:rgba(224,64,251,.4);background:rgba(224,64,251,.08);color:#ffead1">Kaatopaikka Capital ${PORT.status==="live"?"holds":"will buy"} ${pct(holding(c).weight,1)} of the portfolio${PORT.status==="live"?` · €${Math.round(holding(c).value).toLocaleString("en-GB")} · ${spct(holding(c).ret)} since purchase`:""}.</div>`:""}
   <div class="eyebrow sec">operating margin, fy2013–fy2025 + ttm</div>
   ${chartSVG(c)}
   <div class="keyrow"><span><i class="sw" style="border-color:#d8b4fe"></i>Reported margin</span><span><i class="sw" style="border-color:var(--accent-hot)"></i>Normalized</span><span><i class="sw" style="border-color:var(--neutral);border-top-style:dashed"></i>Own ${c.start}–2025 median</span><span>Shaded = ${c.nObs}-year window</span></div>
@@ -526,22 +528,22 @@ const globe = new THREE.Group(); scene.add(globe);
 function ll(lat, lon, r){ const p=lat*D2R, l=lon*D2R; return new THREE.Vector3(r*Math.cos(p)*Math.sin(l), r*Math.sin(p), r*Math.cos(p)*Math.cos(l)); }
 
 /* ocean sphere + graticule */
-globe.add(new THREE.Mesh(new THREE.SphereGeometry(1, 128, 96), new THREE.MeshBasicMaterial({color:"#0b0517"})));
+globe.add(new THREE.Mesh(new THREE.SphereGeometry(1, 128, 96), new THREE.MeshBasicMaterial({color:"#0a0f14"})));
 (function(){ const p=[]; const R=1.0008;
   for(let lo=-180; lo<180; lo+=15) for(let la=-80; la<80; la+=2){ const a=ll(la,lo,R), b=ll(la+2,lo,R); p.push(a.x,a.y,a.z,b.x,b.y,b.z); }
   for(let la=-75; la<=75; la+=15) for(let lo=-180; lo<180; lo+=2){ const a=ll(la,lo,R), b=ll(la,lo+2,R); p.push(a.x,a.y,a.z,b.x,b.y,b.z); }
   const g=new THREE.BufferGeometry(); g.setAttribute("position",new THREE.Float32BufferAttribute(p,3));
-  globe.add(new THREE.LineSegments(g,new THREE.LineBasicMaterial({color:"#5b2fa0",transparent:true,opacity:0.16,depthWrite:false}))); })();
+  globe.add(new THREE.LineSegments(g,new THREE.LineBasicMaterial({color:"#253442",transparent:true,opacity:0.16,depthWrite:false}))); })();
 
 /* inner rim light */
 globe.add(new THREE.Mesh(new THREE.SphereGeometry(1.001, 96, 72), new THREE.ShaderMaterial({
-  uniforms:{c:{value:new THREE.Color("#b26bff")}},
+  uniforms:{c:{value:new THREE.Color("#ffb24b")}},
   vertexShader:"varying vec3 vN;void main(){vN=normalize(normalMatrix*normal);gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.0);}",
   fragmentShader:"uniform vec3 c;varying vec3 vN;void main(){float f=pow(1.0-max(dot(vN,vec3(0.,0.,1.)),0.0),3.2);gl_FragColor=vec4(c*f*0.9,f*0.9);}",
   transparent:true, depthWrite:false, blending:THREE.AdditiveBlending })));
 /* atmosphere */
 scene.add(new THREE.Mesh(new THREE.SphereGeometry(1.14, 96, 72), new THREE.ShaderMaterial({
-  uniforms:{c:{value:new THREE.Color("#9d4edd")}},
+  uniforms:{c:{value:new THREE.Color("#ef9d32")}},
   vertexShader:"varying vec3 vN;void main(){vN=normalize(normalMatrix*normal);gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.0);}",
   fragmentShader:"uniform vec3 c;varying vec3 vN;void main(){float k=clamp(-vN.z,0.0,1.0);float i=pow(k,1.4)*1.5;gl_FragColor=vec4(c*i,i);}",
   side:THREE.BackSide, transparent:true, depthWrite:false, blending:THREE.AdditiveBlending })));
@@ -555,7 +557,7 @@ let dotMat=null;
 /* land dots on a Fibonacci sphere (mask precomputed from Natural Earth land) */
 (function(){
   const N=GEO.N, bin=atob(GEO.mask), ga=Math.PI*(3-Math.sqrt(5)), pos=[], col=[];
-  const cA=new THREE.Color("#4a2690"), cB=new THREE.Color("#b993f5"), tmp=new THREE.Color();
+  const cA=new THREE.Color("#27323c"), cB=new THREE.Color("#f3b96a"), tmp=new THREE.Color();
   for(let i=0;i<N;i++){
     if(!((bin.charCodeAt(i>>3)>>(i&7))&1)) continue;
     const y=1-(i+0.5)*2/N, r=Math.sqrt(1-y*y), th=i*ga, R=1.0022;
@@ -583,15 +585,15 @@ function segs(arr, r, skipNordic){
   const g=new THREE.BufferGeometry(); g.setAttribute("position",new THREE.Float32BufferAttribute(out,3)); return g;
 }
 const lineMat=(c,o)=>new THREE.LineBasicMaterial({color:c,transparent:true,opacity:o,depthWrite:false});
-globe.add(new THREE.LineSegments(segs(GEO.land,1.0016,true), lineMat("#a879ff",0.42)));
-globe.add(new THREE.LineSegments(segs(GEO.coastN,1.0016,false), lineMat("#cfa8ff",0.7)));
-globe.add(new THREE.LineSegments(segs(GEO.bord,1.0016,false), lineMat("#8a5fd6",0.22)));
-globe.add(new THREE.LineSegments(segs(GEO.bordN,1.0016,false), lineMat("#b48cf0",0.45)));
+globe.add(new THREE.LineSegments(segs(GEO.land,1.0016,true), lineMat("#ffba65",0.42)));
+globe.add(new THREE.LineSegments(segs(GEO.coastN,1.0016,false), lineMat("#f7d5a1",0.7)));
+globe.add(new THREE.LineSegments(segs(GEO.bord,1.0016,false), lineMat("#cb8c3d",0.22)));
+globe.add(new THREE.LineSegments(segs(GEO.bordN,1.0016,false), lineMat("#ffd59a",0.45)));
 
 /* stars */
 (function(){ const p=[]; for(let i=0;i<2600;i++){ const v=new THREE.Vector3().randomDirection? new THREE.Vector3().randomDirection(): new THREE.Vector3(Math.random()-.5,Math.random()-.5,Math.random()-.5).normalize(); v.multiplyScalar(60+Math.random()*80); p.push(v.x,v.y,v.z); }
   const g=new THREE.BufferGeometry(); g.setAttribute("position",new THREE.Float32BufferAttribute(p,3));
-  scene.add(new THREE.Points(g,new THREE.PointsMaterial({size:0.35,map:dotTex,color:"#cbb6ff",transparent:true,opacity:0.55,depthWrite:false}))); })();
+  scene.add(new THREE.Points(g,new THREE.PointsMaterial({size:0.35,map:dotTex,color:"#f7dfbd",transparent:true,opacity:0.55,depthWrite:false}))); })();
 
 /* company markers */
 const UP = new THREE.Vector3(0,1,0);
@@ -612,7 +614,7 @@ const markers = C.map(c=>{
   const cap = new THREE.Sprite(capMat); grp.add(cap);
   const baseMat = new THREE.SpriteMaterial({map:glowTex,color,transparent:true,opacity:0.8,depthWrite:false,blending:THREE.AdditiveBlending});
   const base = new THREE.Sprite(baseMat); grp.add(base);
-  const ring = new THREE.Mesh(ringGeo, new THREE.MeshBasicMaterial({color:"#f5d0fe",transparent:true,opacity:0,side:THREE.DoubleSide,depthWrite:false}));
+  const ring = new THREE.Mesh(ringGeo, new THREE.MeshBasicMaterial({color:"#ffead1",transparent:true,opacity:0,side:THREE.DoubleSide,depthWrite:false}));
   ring.rotation.x = -Math.PI/2; ring.position.y = 0.0008; grp.add(ring);
   return {c, n, grp, pillar, cap, base, ring, mat, color, h:targetH(c), sx:0, sy:0, tx:0, ty:0, vis:false};
 });
@@ -624,10 +626,10 @@ document.querySelectorAll(".seg button").forEach(b=> b.onclick=()=>setMode(b.dat
 scene.add(new THREE.HemisphereLight(0xf3e8ff, 0x160a28, 1.05));
 const sun = new THREE.DirectionalLight(0xffffff, 0.75); sun.position.set(0.6,1,1); camera.add(sun); scene.add(camera);
 const TM = {
-  body:new THREE.MeshLambertMaterial({color:"#7c3aed"}), stripe:new THREE.MeshLambertMaterial({color:"#e9d5ff"}),
-  cab:new THREE.MeshLambertMaterial({color:"#f0abfc"}), dark:new THREE.MeshLambertMaterial({color:"#1a0f2e"}),
-  glass:new THREE.MeshLambertMaterial({color:"#2a1747", emissive:"#3b1d6e"}), wheel:new THREE.MeshLambertMaterial({color:"#0c0716"}),
-  rim:new THREE.MeshLambertMaterial({color:"#c4b5fd"}) };
+  body:new THREE.MeshLambertMaterial({color:"#df8a2d"}), stripe:new THREE.MeshLambertMaterial({color:"#ffe7c0"}),
+  cab:new THREE.MeshLambertMaterial({color:"#ffd5a8"}), dark:new THREE.MeshLambertMaterial({color:"#162029"}),
+  glass:new THREE.MeshLambertMaterial({color:"#253440", emissive:"#385066"}), wheel:new THREE.MeshLambertMaterial({color:"#0a1016"}),
+  rim:new THREE.MeshLambertMaterial({color:"#ffe1b1"}) };
 const wheelGeo = new THREE.CylinderGeometry(.085,.085,.07,16); wheelGeo.rotateZ(Math.PI/2);
 const hubGeo = new THREE.CylinderGeometry(.04,.04,.075,10); hubGeo.rotateZ(Math.PI/2);
 function bx(w,h,l,mat,x,y,z){ const m=new THREE.Mesh(new THREE.BoxGeometry(w,h,l),mat); m.position.set(x,y,z); return m; }
