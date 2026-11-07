@@ -46,6 +46,7 @@ def check_javascript():
     code = [body for attrs, body in blocks if "src=" not in attrs and "json" not in attrs.lower() and body.strip()]
     # The professional terminal keeps JavaScript in a separate, testable asset.
     assets = re.findall(r'<script[^>]+src=["\']([^"\']+\.js)["\']', html, re.I)
+    assets.append("assets/home-earth.js")  # intentionally cache-versioned in HTML
     assets.append("assets/solar-globe.js")  # loaded by classic.html, not index.html
     for rel in assets:
         if rel.startswith(('https://', 'http://')):
@@ -60,7 +61,7 @@ def check_javascript():
     for rel in re.findall(r'<link[^>]+href=["\']([^"\']+\.css)["\']', html, re.I):
         if not rel.startswith(('https://', 'http://')) and not os.path.isfile(os.path.join(HERE, rel)):
             fail(f"missing CSS asset: {rel}")
-    for id_ in ("overview-stats", "home-frame", "time-date-range", "time-play", "research-rows", "portfolio-holdings", "journal-feed",
+    for id_ in ("overview-stats", "home-earth-canvas", "time-date-range", "time-play", "research-rows", "portfolio-holdings", "journal-feed",
                 "journal-rejected", "lab-company", "lab-chart", "lab-sensitivity",
                 "lab-validation", "company-drawer", "classic-frame"):
         if f'id="{id_}"' not in html:
