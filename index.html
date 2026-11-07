@@ -11,6 +11,7 @@
   <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Space+Grotesk:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="assets/terminal.css">
   <link rel="stylesheet" href="assets/terminal-bloomberg.css">
+  <link rel="stylesheet" href="assets/solar-home.css">
   <script src="assets/valuation-engine.js" defer></script>
   <script src="assets/terminal.js" defer></script>
 </head>
@@ -51,6 +52,23 @@
 
         <section id="page-overview" class="page is-active" aria-labelledby="overview-title">
           <div class="page-heading"><div><div class="eyebrow">NORDIC INDUSTRIALS / INVESTMENT RESEARCH</div><h1 id="overview-title">The opportunity desk<span class="period">.</span></h1><p class="lead">Finding value where others see waste. Thirty companies, one systematic process, every decision on record.</p></div><div class="heading-actions"><button class="button button-ghost" data-page-go="methodology">How the model works ↗</button><button class="button button-primary" data-page-go="research">Explore companies <span>↗</span></button></div></div>
+          <section class="planet-desk panel" aria-label="Interactive Nordic globe and historical time travel">
+            <div class="planet-head"><div><div class="eyebrow">EARTH / NORDIC MARKETS / 2024–TODAY</div><h2>Markets on a moving planet<span class="period">.</span></h2><p>Rotate the Earth, explore the sunlit and night-side hemispheres, or travel back through the investment timeline.</p></div><span class="planet-live" id="planet-data-state">HISTORICAL REPLAY · LOADING</span></div>
+            <div class="planet-grid">
+              <div class="planet-canvas"><iframe id="home-frame" title="Interactive Earth with sunlight and Nordic headquarters" loading="eager" src="classic.html?embed=1&amp;home=1"></iframe><span class="planet-notation">DRAG TO ROTATE <span>·</span> SCROLL TO ZOOM <span>·</span> SOLAR LIGHTING: UTC</span></div>
+              <div class="time-desk">
+                <div class="time-desk-top"><span class="eyebrow">TIME MACHINE</span><span class="time-badge" id="time-mode">ASTRONOMICAL REPLAY</span></div>
+                <div class="time-date" id="time-date-label">—</div>
+                <label class="time-label" for="time-date-range">REPLAY DATE · JAN 2024 → PRESENT</label>
+                <input type="range" id="time-date-range" min="0" max="100" value="100" step="1" aria-label="Historical globe date">
+                <div class="time-ends"><span>JAN 2024</span><span id="time-end-date">TODAY</span></div>
+                <div class="time-actions"><button class="button button-primary" id="time-play" type="button" aria-pressed="false">▶ Play 2024 → today</button><button class="button button-ghost" id="time-today" type="button">Today</button></div>
+                <div class="time-fact"><span class="time-fact-icon" aria-hidden="true">◉</span><div><strong id="time-summary-title">Checking historical evidence</strong><p id="time-summary">Only source-verified filings and prices can produce historical return figures.</p></div></div>
+                <div class="time-event-list" id="time-events" aria-live="polite"></div>
+                <div class="time-footnote">The Sun's position uses the selected UTC date and an accelerated day/night cycle. Meteor effects appear only after verified negative events. No future accounting data enter the historical model.</div>
+              </div>
+            </div>
+          </section>
           <div id="overview-stats" class="stat-grid skeleton-grid" aria-live="polite"></div>
           <div class="two-column" style="margin-top:24px">
             <div class="panel panel-feature"><div class="panel-head"><div><div class="eyebrow">PORTFOLIO PERFORMANCE</div><h2>Capital at work</h2></div><span class="tag tag-muted">PAPER TRADING</span></div><div class="portfolio-hero" id="overview-portfolio"></div><div class="chart-container" id="overview-chart"></div><div class="panel-footer"><span>Strategy vs. equally weighted 30-company universe</span><button class="inline-action" data-page-go="portfolio">Full portfolio analysis ↗</button></div></div>
