@@ -40,12 +40,18 @@ jobs:
         if: github.event_name != 'push'
         run: python update_site.py
 
+      - name: Rebuild source-validated historical replay (if inputs available)
+        if: github.event_name != 'push'
+        run: python historical_data/refresh_status.py
+
       - name: Save results to the repository
         if: github.event_name != 'push'
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add data.json portfolio.json simulation.json model.xlsx
+          git add data.json portfolio.json simulation.json model.xlsx historical-status.json
+          git add -u historical-backtest.json 2>/dev/null || true
+          if [ -f historical-backtest.json ]; then git add historical-backtest.json; fi
           if git diff --cached --quiet; then
             echo "Nothing changed"
             exit 0
