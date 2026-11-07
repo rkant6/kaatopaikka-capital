@@ -22,7 +22,7 @@ import time
 HERE = os.path.dirname(os.path.abspath(__file__))
 PY_FILES = ["update_site.py", "nordic_margin_reversion.py", "historical_backtest.py", "check_site.py",
             "historical_data/collect_market_history.py", "historical_data/refresh_status.py",
-            "tests/test_historical_backtest.py"]
+            "tests/test_historical_backtest.py", "tests/test_market_history.py"]
 OUTPUTS = ["data.json", "portfolio.json", "simulation.json", "model.xlsx"]
 
 
