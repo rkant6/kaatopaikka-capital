@@ -11,10 +11,12 @@
   <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Space+Grotesk:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="assets/terminal.css">
   <link rel="stylesheet" href="assets/terminal-bloomberg.css">
-  <link rel="stylesheet" href="assets/solar-home.css?v=blue-marble-zoom-v2">
+  <link rel="stylesheet" href="assets/solar-home.css?v=2024-replay-v3">
+  <link rel="stylesheet" href="assets/replay-desk.css?v=2024-replay-v3">
   <script src="assets/valuation-engine.js" defer></script>
-  <script src="assets/home-earth.js?v=blue-marble-zoom-v2" defer></script>
-  <script src="assets/terminal.js" defer></script>
+  <script src="assets/home-earth.js?v=2024-replay-zoom-v3" defer></script>
+  <script src="assets/terminal.js?v=2024-replay-v3" defer></script>
+  <script src="assets/replay-desk.js?v=2024-replay-v3" defer></script>
 </head>
 <body>
   <div class="shell">
@@ -35,6 +37,7 @@
       <nav class="nav-group" aria-label="Explore">
         <button class="nav-item" data-page="globe"><span class="nav-icon">◎</span> Nordic globe <span class="nav-hotkey">06</span></button>
         <button class="nav-item" data-page="methodology"><span class="nav-icon">⌘</span> Methodology <span class="nav-hotkey">07</span></button>
+        <button class="nav-item" data-page="backtest"><span class="nav-icon">◷</span> 2024 strategy replay <span class="nav-hotkey">08</span></button>
       </nav>
       <div class="side-bottom">
         <div class="side-insight"><span class="live-dot"></span><span><strong>MODEL STATUS</strong><small id="side-status">Loading market data…</small></span></div>
@@ -73,18 +76,65 @@
                 <input type="range" id="time-date-range" min="0" max="100" value="100" step="1" aria-label="Historical globe date">
                 <div class="time-ends"><span>JAN 2024</span><span id="time-end-date">TODAY</span></div>
                 <div class="time-actions"><button class="button button-primary" id="time-play" type="button" aria-pressed="false">▶ Play 2024 → today</button><button class="button button-ghost" id="time-today" type="button">Today</button></div>
+                <div class="replay-controls">
+                  <label for="replay-speed">SPEED <select id="replay-speed" aria-label="Replay speed"><option value="7">0.5×</option><option value="14" selected>1×</option><option value="28">2×</option><option value="56">4×</option></select></label>
+                  <button type="button" id="replay-next-event" class="replay-event-jump" disabled>NEXT EVENT →</button>
+                </div>
+                <div class="replay-live-stats" id="replay-live-stats" aria-live="off"><span>2024 return —</span><span>Source data pending</span></div>
                 <div class="time-fact"><span class="time-fact-icon" aria-hidden="true">◉</span><div><strong id="time-summary-title">Checking historical evidence</strong><p id="time-summary">Only source-verified filings and prices can produce historical return figures.</p></div></div>
                 <div class="time-event-list" id="time-events" aria-live="polite"></div>
+                <button class="replay-research-link" data-page-go="backtest" type="button">OPEN FULL 2024 REPLAY DESK ↗</button>
                 <div class="time-footnote">The Sun follows the selected UTC date and an accelerated day/night cycle. Earth imagery is a NASA Blue Marble composite, <em>not</em> a real-time satellite feed. Night lights and clouds are illustrative layers. Verified negative events alone can trigger meteors; no future accounting data enter historical signals. <a href="assets/EARTH_CREDITS.md" target="_blank" rel="noopener">Imagery credits ↗</a></div>
               </div>
             </div>
           </section>
+          <div class="replay-market-tape" aria-label="Historical research replay status">
+            <div class="replay-tape-head"><span class="eyebrow">RESEARCH BACKTEST / JAN 2024 → NOW</span><span id="replay-validation" class="replay-flag">AWAITING SOURCE DATA</span></div>
+            <div id="replay-mini-chart" class="replay-mini-chart"><div class="replay-chart-empty">The verified historical equity curve activates when original financial reports and dated prices are supplied.</div></div>
+            <div class="replay-tape-footer"><span id="replay-asof">No 2024 strategy returns published</span><button class="inline-action" type="button" data-page-go="backtest">Open strategy replay & evidence ↗</button></div>
+          </div>
           <div id="overview-stats" class="stat-grid skeleton-grid" aria-live="polite"></div>
           <div class="two-column" style="margin-top:24px">
             <div class="panel panel-feature"><div class="panel-head"><div><div class="eyebrow">PORTFOLIO PERFORMANCE</div><h2>Capital at work</h2></div><span class="tag tag-muted">PAPER TRADING</span></div><div class="portfolio-hero" id="overview-portfolio"></div><div class="chart-container" id="overview-chart"></div><div class="panel-footer"><span>Strategy vs. equally weighted 30-company universe</span><button class="inline-action" data-page-go="portfolio">Full portfolio analysis ↗</button></div></div>
             <div class="panel panel-opportunities"><div class="panel-head"><div><div class="eyebrow">MODEL LEADERBOARD</div><h2>Top opportunities</h2></div><button class="inline-action" data-page-go="research">View all 30 ↗</button></div><div id="overview-picks"></div></div>
           </div>
           <div class="three-column" style="margin-top:24px"><div class="panel"><div class="panel-head"><div><div class="eyebrow">THE INVESTMENT PROCESS</div><h2>Why we own it</h2></div></div><div id="overview-thesis"></div></div><div class="panel"><div class="panel-head"><div><div class="eyebrow">MODEL COVERAGE</div><h2>Signals at a glance</h2></div></div><div id="overview-signals"></div></div><div class="panel"><div class="panel-head"><div><div class="eyebrow">DATA INTEGRITY</div><h2>Research health</h2></div></div><div id="overview-health"></div></div></div>
+        </section>
+
+        <section id="page-backtest" class="page" aria-labelledby="backtest-title">
+          <div class="page-heading"><div><div class="eyebrow">POINT-IN-TIME RESEARCH / 2024 → PRESENT</div>
+            <h1 id="backtest-title">Strategy replay<span class="period">.</span></h1>
+            <p class="lead">A chronological audit of what the model would have known, bought, sold and earned. Reconstructed research, not an actual investment track record.</p></div>
+            <div class="heading-actions"><button class="button button-ghost" type="button" id="backtest-jump">↗ Explore on globe</button><span class="tag tag-outline" id="backtest-status">DATA AUDIT PENDING</span></div></div>
+          <div class="backtest-note" role="note"><strong>HISTORICAL INTEGRITY</strong><span>This is a retrospective test of today's strategy rules on a fixed, surviving company universe. A valid curve requires date-stamped filings, original pre-trade prices, FX, corporate actions and a full audit trail. Until then, no 2024 performance or trades are claimed.</span></div>
+          <div class="stat-grid" id="backtest-stats"></div>
+          <div class="two-column backtest-grid">
+            <div class="panel panel-feature"><div class="panel-head"><div><div class="eyebrow">EQUITY CURVE / EUR</div><h2>2024-to-date reconstructed NAV</h2></div></div>
+              <div id="backtest-chart" class="backtest-chart"><div class="replay-chart-empty">Historical data not yet validated.</div></div>
+              <div class="panel-footer" id="backtest-chart-caption">No simulated returns are shown without source-verified inputs.</div>
+            </div>
+            <div class="panel"><div class="panel-head"><div><div class="eyebrow">AT THE SELECTED DATE</div><h2>As-of portfolio</h2></div></div>
+              <div id="backtest-holdings" class="backtest-holdings"></div>
+              <div id="backtest-snapshot" class="backtest-snapshot"></div>
+            </div>
+          </div>
+          <div class="two-column backtest-grid">
+            <div class="panel"><div class="panel-head"><div><div class="eyebrow">FILINGS / ORDERS / EVENTS</div><h2>What happened, and when?</h2></div>
+              <span class="tag tag-muted">EVIDENCE-LINKED</span></div>
+              <div class="event-filter-group" role="group" aria-label="Event type filter">
+                <button class="event-filter is-active" type="button" data-event-kind="all">ALL</button>
+                <button class="event-filter" type="button" data-event-kind="trade">TRADES</button>
+                <button class="event-filter" type="button" data-event-kind="earnings">EARNINGS</button>
+                <button class="event-filter" type="button" data-event-kind="risk">RISK</button>
+              </div>
+              <div id="backtest-events" class="backtest-events"></div>
+            </div>
+            <div class="panel"><div class="panel-head"><div><div class="eyebrow">DECISIONS / EXECUTION</div><h2>Trade blotter</h2></div>
+              <span class="tag tag-muted">COSTS INCLUDED</span></div>
+              <div class="table-scroll"><table class="data-table replay-blotter"><thead><tr><th>DATE</th><th>TRADE</th><th>AMOUNT</th><th>EVIDENCE</th></tr></thead><tbody id="backtest-orders"></tbody></table></div>
+            </div>
+          </div>
+          <div class="panel backtest-provenance"><div class="panel-head"><div><div class="eyebrow">PROVENANCE / COVERAGE</div><h2>What is verified?</h2></div></div><div id="backtest-coverage"></div></div>
         </section>
 
         <section id="page-research" class="page" aria-labelledby="research-title"><div class="page-heading"><div><div class="eyebrow">EQUITY RESEARCH / SCREENER</div><h1 id="research-title">Company universe<span class="period">.</span></h1><p class="lead">A transparent ranking of Nordic industrial companies — every signal can be inspected.</p></div><div class="heading-actions"><span class="tag tag-outline" id="research-count">30 COMPANIES</span></div></div><div class="panel table-panel"><div class="table-tools"><label class="search-field"><span aria-hidden="true">⌕</span><input id="research-query" type="search" placeholder="Search company, ticker or sector…" autocomplete="off" aria-label="Search companies"></label><select id="research-country" aria-label="Filter country"><option value="all">All countries</option><option value="Sweden">Sweden</option><option value="Finland">Finland</option><option value="Norway">Norway</option><option value="Denmark">Denmark</option></select><select id="research-signal" aria-label="Filter signal"><option value="all">All signals</option><option value="LONG">Long</option><option value="WATCH">Watch</option><option value="NEUTRAL">Neutral</option><option value="SHORT">Avoid</option><option value="EXCLUDED">Excluded</option></select></div><div class="table-scroll"><table class="data-table"><thead><tr><th><button class="sort-btn" data-sort="rank">RANK ↕</button></th><th>COMPANY</th><th>COUNTRY</th><th>SIGNAL</th><th><button class="sort-btn" data-sort="revUp">REVERSION UPSIDE ↕</button></th><th><button class="sort-btn" data-sort="gap">MARGIN GAP ↕</button></th><th><button class="sort-btn" data-sort="score">SCORE ↕</button></th><th></th></tr></thead><tbody id="research-rows"></tbody></table></div><div class="table-bottom" id="research-bottom"></div></div></section>

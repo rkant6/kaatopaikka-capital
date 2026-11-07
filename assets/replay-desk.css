@@ -1,0 +1,137 @@
+/* KAATOPAIKKA / INVESTMENT TERMINAL
+   2024 source-audited replay. Financial colors belong to facts, not decoration. */
+:root{--replay-ink:#0c131a;--replay-surface:#141c25;--replay-line:#2c3a47;--replay-accent:#ffad32}
+.replay-market-tape{
+  border:1px solid #334351;background:linear-gradient(130deg,#101922 0%,#0c1219 56%,#151b22 100%);
+  border-radius:4px;margin:14px 0 22px;overflow:hidden;box-shadow:inset 0 1px 0 #48546338
+}
+.replay-tape-head,.replay-tape-footer{
+ display:flex;align-items:center;justify-content:space-between;gap:14px;
+ padding:14px 20px
+}
+.replay-tape-head{border-bottom:1px solid #2b3742}
+.replay-tape-footer{border-top:1px solid #273641;color:#94a8bb;font:500 10px/1.5 "IBM Plex Mono",monospace}
+.replay-flag{padding:5px 8px;border:1px solid #8f6834;background:#44301955;color:#ffc173;border-radius:3px;
+ font:700 9px "IBM Plex Mono",monospace;letter-spacing:.07em}
+.replay-flag.is-ready{background:#173328;color:#7be0ac;border-color:#34785e}
+.replay-mini-chart{min-height:132px;padding:7px 9px;background:radial-gradient(ellipse at 55% 25%,#1e2b37 0%,#0b141d 72%)}
+.replay-mini-chart .replay-equity-svg{display:block;max-height:175px}
+.replay-chart-empty{display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:120px;
+ padding:18px;text-align:center;color:#97aabd;font:500 11px/1.65 "IBM Plex Mono",monospace}
+.replay-empty-state{
+ display:flex;flex-direction:column;align-items:center;justify-content:center;
+ min-height:165px;padding:24px 24px;text-align:center;color:#a1adbd;
+ background:repeating-linear-gradient(125deg,#13202b33 0,#13202b33 1px,transparent 1px,transparent 22px)
+}
+.replay-empty-mark{color:#ffb14d;font-size:26px;margin-bottom:7px;opacity:.9}
+.replay-empty-state strong{font:650 14px/1.3 "DM Sans",sans-serif;color:#e9edf2}
+.replay-empty-state p{font-size:11px;line-height:1.8;margin:9px 0 10px;max-width:580px;color:#9cabb8}
+.replay-source-link{color:#ffc470;text-decoration:none;font:600 10px/1.5 "IBM Plex Mono",monospace}
+.replay-source-link:hover,.replay-source-link:focus-visible{color:#ffdfa7;text-decoration:underline;text-underline-offset:3px}
+.replay-controls{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:0 0 12px}
+.replay-controls label{display:inline-flex;align-items:center;gap:7px;color:#9cafc0;
+  font:700 9px "IBM Plex Mono",monospace}
+.replay-controls select{padding:5px 4px;border:1px solid #51606f;background:#17222d;
+ color:#ffd38c;font:700 10px "IBM Plex Mono",monospace;border-radius:3px;cursor:pointer}
+.replay-event-jump{padding:7px 10px;border:1px solid #9e722b;background:#1b242b;color:#ffd086;border-radius:3px;
+ cursor:pointer;font:700 9px "IBM Plex Mono",monospace;transition:background .15s ease}
+.replay-event-jump:hover:not(:disabled){background:#373127}
+.replay-event-jump:disabled{opacity:.35;cursor:default;border-color:#59616a}
+.replay-live-stats{border:1px solid #334453;background:#0d1922;display:flex;flex-wrap:wrap;gap:0;margin-bottom:12px;border-radius:3px}
+.replay-live-stats span{display:flex;flex:1;min-width:75px;flex-direction:column;padding:10px 11px;gap:6px;border-right:1px solid #34404a}
+.replay-live-stats span:last-child{border-right:none}
+.replay-live-stats small{color:#8fa5b8;font:600 9px "IBM Plex Mono",monospace}
+.replay-live-stats b{color:#ebedf2;font:700 12px/1 "IBM Plex Mono",monospace;font-variant-numeric:tabular-nums}
+.replay-live-stats .positive{color:#59e2ad}
+.replay-live-stats .negative{color:#ff858a}
+.time-event-list{min-height:96px;max-height:245px;overflow-y:auto;padding:8px 0 4px}
+.time-desk .replay-no-events{padding:9px 8px;color:#92a6b5;font:500 10px/1.6 "DM Sans",sans-serif;border-left:2px solid #7d6c46;background:#121d27}
+.replay-research-link{width:100%;min-height:36px;margin:8px 0 13px;border:1px solid #986c32;background:#211e1a;color:#ffc87b;border-radius:3px;
+ text-align:center;font:700 10px "IBM Plex Mono",monospace;letter-spacing:.02em;cursor:pointer}
+.replay-research-link:hover{border-color:#ffc575;background:#312719}
+.time-desk{gap:0}
+.time-fact{min-height:92px}
+.time-event-list .replay-event{padding:8px 7px;margin-bottom:5px}
+.time-event-list .replay-event-text{font-size:10px}
+.time-event-list .replay-event-icon{font-size:14px;flex-basis:21px}
+.time-event-list .replay-event-caption{font-size:8px}
+.backtest-note{display:flex;align-items:flex-start;gap:15px;padding:17px 19px;margin-bottom:19px;
+ border:1px solid #685434;border-left:3px solid #ffad32;background:linear-gradient(100deg,#2a231b,#161e26)}
+.backtest-note strong{white-space:nowrap;color:#ffbc62;font:700 10px/1.7 "IBM Plex Mono",monospace}
+.backtest-note span{color:#acb6c2;font:500 11px/1.75 "DM Sans",sans-serif}
+.backtest-grid{margin:20px 0}
+.backtest-grid .panel{min-width:0;overflow:hidden}
+.backtest-chart{min-height:315px;padding:8px 11px 12px;background:radial-gradient(ellipse at 44% 5%,#1e2833,#0d141d 78%)}
+.backtest-chart .replay-equity-svg{display:block;width:100%;height:auto;max-height:360px}
+.replay-equity-svg{width:100%;height:auto;overflow:visible}
+.backtest-holdings{padding:12px 18px 0}
+.backtest-holdings .replay-empty-state{min-height:200px}
+.backtest-position{display:grid;grid-template-columns:minmax(0,1fr) 35%;gap:15px;align-items:center;
+  padding:10px 2px;border-bottom:1px solid #263440}
+.backtest-position strong{display:block;color:#e5ebf0;font-size:12px}
+.backtest-position small{display:block;color:#8ca0b2;margin-top:3px;font:500 10px "IBM Plex Mono",monospace}
+.backtest-weight-bar{height:6px;border-radius:4px;background:#283c4b;overflow:hidden}
+.backtest-weight-bar i{display:block;height:100%;background:linear-gradient(90deg,#df8740,#ffd171)}
+.backtest-snapshot{padding:12px 18px 22px}
+.replay-audit-caption{font:500 10px/1.6 "IBM Plex Mono",monospace;color:#8095a7;margin:9px 0 13px}
+.replay-evidence{display:flex;justify-content:space-between;gap:8px;padding:9px 0;border-bottom:1px dashed #334350;
+ font:500 10px/1.5 "IBM Plex Mono",monospace}
+.replay-evidence b{color:#dfe6ec}
+.replay-evidence span{color:#8d9ba6;margin-left:auto}
+.replay-evidence a{color:#ffbc65;text-decoration:none}
+.event-filter-group{display:flex;flex-wrap:wrap;gap:5px;padding:8px 14px 13px;border-bottom:1px solid #27343f}
+.event-filter{padding:7px 11px;border:1px solid #415060;background:#111b25;border-radius:3px;color:#94a7b6;
+  font:650 9px "IBM Plex Mono",monospace;cursor:pointer;letter-spacing:.05em}
+.event-filter.is-active,.event-filter:hover{color:#ffd18d;background:#302819;border-color:#bd873a}
+.backtest-events{max-height:510px;overflow-y:auto;padding:11px 14px 19px;scrollbar-color:#455463 #101820;scrollbar-width:thin}
+.backtest-events .replay-event{margin-bottom:8px}
+.replay-event{display:flex;gap:11px;align-items:flex-start;background:#15212b;border:1px solid #2b3c49;
+ padding:11px 12px;border-radius:3px}
+.replay-event-icon{flex:0 0 26px;text-align:center;color:#ffd18a;font:700 18px "IBM Plex Mono",monospace}
+.replay-event-caption{font:600 9px/1.55 "IBM Plex Mono",monospace;letter-spacing:.03em;color:#9daebd;margin-bottom:5px}
+.replay-event-caption b{color:#ffbf60}
+.replay-event-text{color:#e0e7ec;font:500 11px/1.65 "DM Sans",sans-serif;overflow-wrap:anywhere}
+.replay-event-trade{border-left:3px solid #56cdb0}
+.replay-event-earnings{border-left:3px solid #7798be}
+.replay-event-risk{border-left:3px solid #f1757b}
+.replay-event-risk .replay-event-icon{color:#fa8b8b}
+.replay-event-rebalance{border-left:3px solid #f1ab57}
+.replay-event-corporate{border-left:3px solid #b9a6cf}
+.replay-event .replay-source-link{display:inline-block;margin-top:8px}
+.replay-source-muted{display:inline-block;margin-top:6px;color:#7f94a7;font-size:9px}
+.replay-order-side{display:inline-block;margin-bottom:4px;padding:3px 5px;border:1px solid;border-radius:2px;font:700 9px "IBM Plex Mono",monospace}
+.replay-order-side.buy{color:#5cdfb2;border-color:#347d63;background:#183229}
+.replay-order-side.sell{color:#fc8a8e;border-color:#8a4045;background:#2e2026}
+.replay-blotter td{vertical-align:top;line-height:1.7}
+.replay-blotter .replay-source-link{font-size:9px;white-space:normal}
+.replay-no-orders{text-align:center;color:#8fa3b3;padding:36px 15px!important}
+.backtest-provenance{margin:22px 0}
+.replay-coverage-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:0;border-top:1px solid #2b3944}
+.replay-coverage-item{padding:18px 20px;border-right:1px solid #2d3a45}
+.replay-coverage-item:last-child{border-right:0}
+.replay-coverage-item span{display:block;min-height:34px;color:#8f9fae;font:650 10px/1.65 "IBM Plex Mono",monospace}
+.replay-coverage-item strong{display:block;color:#e5eaf0;font:700 20px/1.6 "Space Grotesk",sans-serif;font-variant-numeric:tabular-nums}
+.replay-coverage-item small{display:block;color:#92a4b1;font:500 10px/1.6 "DM Sans",sans-serif}
+.replay-coverage-notice{padding:20px;border-top:1px solid #283844;background:#151e27}
+.replay-coverage-notice strong{color:#ffd49a;font:700 10px "IBM Plex Mono",monospace}
+.replay-coverage-notice p{color:#9cadba;font:500 11px/1.75 "DM Sans",sans-serif;max-width:1050px;margin:9px 0 0}
+@media(max-width:1230px){
+  .replay-coverage-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .replay-coverage-item{border-bottom:1px solid #2d3a45}
+}
+@media(max-width:980px){
+  .time-desk{display:flex;flex-direction:column;padding:21px 22px 17px}
+  .time-desk-top,.time-date,.time-label,.time-desk input,.time-ends,.time-actions,.time-fact,
+  .time-event-list,.time-footnote{grid-column:auto;grid-row:auto}
+  .replay-live-stats span{flex-basis:25%}
+}
+@media(max-width:720px){
+  .replay-tape-head,.replay-tape-footer{flex-direction:column;align-items:flex-start}
+  .replay-coverage-grid{grid-template-columns:1fr}
+  .backtest-note{display:block}
+  .backtest-note span{display:block;margin-top:6px}
+  .backtest-chart{min-height:220px}
+  .replay-market-tape{margin-top:10px}
+  .replay-coverage-item{border-right:0}
+}
+@media(prefers-reduced-motion:reduce){.replay-equity-svg,.replay-event{transition:none!important}}

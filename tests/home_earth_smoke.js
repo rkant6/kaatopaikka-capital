@@ -71,6 +71,10 @@ buttons['earth-zoom-out'].events.click();
 assert.ok(zoom()<afterPlus,'Zoom − control must work');
 buttons['earth-zoom-reset'].events.click();
 assert.ok(Math.abs(zoom()-1)<.00001,'Reset control must restore original view');
+for(let i=0;i<12;i++)buttons['earth-zoom-in'].events.click();
+assert.ok(zoom()>7.9,'Deep zoom must reach approximately 800 percent');
+buttons['earth-zoom-reset'].events.click();
+assert.ok(Math.abs(zoom()-1)<.00001,'Deep zoom reset must restore globe');
 listeners.pointerdown({pointerId:1,clientX:100,clientY:100});
 listeners.pointerdown({pointerId:2,clientX:200,clientY:100});
 listeners.pointermove({pointerId:2,clientX:250,clientY:100});
@@ -82,7 +86,7 @@ assert.ok(zoom()>1.7,'Keyboard + must zoom in');
 listeners.keydown({key:'0',preventDefault(){}});
 assert.ok(Math.abs(zoom()-1)<.00001,'Keyboard 0 must reset zoom');
 listeners.wheel({deltaY:900,deltaMode:0,preventDefault(){}});
-assert.ok(zoom()>=.55-1e-6&&zoom()<.75,'Zoom out must respect safe bounds');
+assert.ok(zoom()>=.4-1e-6&&zoom()<.75,'Zoom out must respect expanded 40%–800% bounds');
 buttons['earth-zoom-reset'].events.click();
 
 assert.ok(!fs.readFileSync('assets/home-earth.js','utf8').includes('LAND_BITS'),

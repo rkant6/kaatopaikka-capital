@@ -193,8 +193,8 @@
     const cpu={ctx,back,bc,images:null,day:null,night:null,cloud:null,step:0,
       resize(){
         // Quarter-million pixels at most, redraw 18–22fps for weak devices.
-        const ideal=Math.round(Math.min(s.radius*1.4,Math.min(s.w,s.h)*0.85));
-        const n=clamp(ideal,190,520);
+        const ideal=Math.round(Math.min(s.radius*1.65,Math.min(s.w,s.h)*1.22));
+        const n=clamp(ideal,190,720);
         if(back.width!==n){back.width=back.height=n;}
       },
       upload(images){
@@ -303,7 +303,7 @@
     const zoomOut=document.getElementById('earth-zoom-out');
     const zoomReset=document.getElementById('earth-zoom-reset');
     const zoomLabel=document.getElementById('earth-zoom-level');
-    const ZMIN=.55,ZMAX=2.9;
+    const ZMIN=.4,ZMAX=8;
     const pointers=new Map();
     let pinchDistance=null,pinchZoom=s.zoom;
     const syncZoom=()=>{
@@ -380,8 +380,8 @@
       // factor so both work smoothly and the change is visually obvious.
       e.preventDefault();
       const px=e.deltaY*(e.deltaMode===1?16:e.deltaMode===2?500:1);
-      const scaled=clamp(px,-240,240);
-      changeZoom(s.zoom*Math.exp(-scaled*.0028));
+      const scaled=clamp(px,-380,380);
+      changeZoom(s.zoom*Math.exp(-scaled*.0034));
     },{passive:false});
     c.addEventListener('keydown',e=>{
       if(e.key==='+'||e.key==='='){e.preventDefault();changeZoom(s.zoom*1.3);}
@@ -436,7 +436,7 @@
           if(s.autoSpin)s.lon+=dt*.033;
           if(Math.abs(s.velocity)>0.00003){s.lon-=s.velocity;s.velocity*=.94;}
         }
-        const fps=s.mode==='gpu'?60:22;
+        const fps=s.mode==='gpu'?60:(s.zoom>3?12:22);
         if(now-lastDraw>1000/fps||s.dirty){
           geometry(s);
           const noon=Date.parse(packet.date+'T12:00:00Z');

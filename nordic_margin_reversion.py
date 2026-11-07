@@ -389,7 +389,8 @@ def compute_model(companies=COMPANIES, a=None) -> list[dict]:
     a = a or default_assumptions()
     out = []
     for c in companies:
-        r = {"name": c["name"], "group": c["group"], "country": c["country"], "flag": c["flag"]}
+        r = {"name": c["name"], "group": c["group"], "country": c["country"], "flag": c["flag"],
+             "tax_override": c.get("tax_override") }
         start = max(c["first"], a["LastFY"] - a["Lookback"] + 1)
         win = [(i, y, c["mar"][i] / 100) for i, y in enumerate(YEARS)
                if start <= y <= a["LastFY"] and c["mar"][i] is not None]
@@ -433,7 +434,7 @@ def compute_model(companies=COMPANIES, a=None) -> list[dict]:
         r["trap"] = "YES" if (r["gap"] > 0 and r["trend"] < -a["TrendMax"]) else "no"
         r["eligible"] = int(r["n"] >= a["MinObs"] and (a["ExclFlagged"] == "No" or r["flag"] != "Y"))
         # CAPM WACC (raw) and implied cost of capital at the normalized margin
-        tax = dict(COUNTRIES)[r["country"]]
+        tax = r["tax_override"] if r["tax_override"] is not None else dict(COUNTRIES)[r["country"]]
         b = max(a["BetaFloor"], a["BlumeW"] * r["beta"] + (1 - a["BlumeW"]))
         ke = a["Rf"] + b * a["ERP"]
         kd = (a["Rf"] + a["CreditSpread"]) * (1 - tax)

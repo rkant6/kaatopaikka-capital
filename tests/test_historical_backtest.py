@@ -36,6 +36,9 @@ def example_inputs(directory):
         for day in ("2023-12-29","2024-01-02","2024-01-03","2024-02-01","2024-02-02"):
             prices.append(dict(company=name,date=day,close=100+i+(1 if day.endswith("02") else 0),
                                dividend=0,split_factor=1,fx_to_eur=.09 if i%4==0 else 1,
+                               reporting_fx_to_eur=.85 if name=="A.P. Møller-Mærsk" else 1,
+                               price_currency=next(c["trd"] for c in model.COMPANIES if c["name"]==name),
+                               fx_source_url="https://exchange.example/TEST-FX",
                                source_url="https://exchange.example/TEST-NOT-REAL"))
     for table,rows in (("filings",filings),("annual_margins",annual),("prices",prices)):
         write_rows(directory/f"{table}.csv",hist.SCHEMAS[table],rows)

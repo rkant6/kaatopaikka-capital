@@ -21,7 +21,8 @@ import time
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 PY_FILES = ["update_site.py", "nordic_margin_reversion.py", "historical_backtest.py", "check_site.py",
-            "tests/test_historical_backtest.py"]
+            "historical_data/collect_market_history.py", "historical_data/refresh_status.py",
+            "tests/test_historical_backtest.py", "tests/test_market_history.py"]
 OUTPUTS = ["data.json", "portfolio.json", "simulation.json", "model.xlsx"]
 
 
@@ -45,7 +46,8 @@ def check_javascript():
     blocks = re.findall(r"<script\b([^>]*)>(.*?)</script>", html, re.S | re.I)
     code = [body for attrs, body in blocks if "src=" not in attrs and "json" not in attrs.lower() and body.strip()]
     # The professional terminal keeps JavaScript in a separate, testable asset.
-    assets = re.findall(r'<script[^>]+src=["\']([^"\']+\.js)["\']', html, re.I)
+    assets = [p.split("?")[0] for p in re.findall(
+        r'<script[^>]+src="([^"]+\.js(?:\?[^"]*)?)"', html, re.I)]
     assets.append("assets/home-earth.js")  # intentionally cache-versioned in HTML
     assets.append("assets/solar-globe.js")  # loaded by classic.html, not index.html
     for rel in assets:
@@ -58,10 +60,11 @@ def check_javascript():
             code.append(f.read())
     if not code:
         fail("index.html has no testable JavaScript")
-    for rel in re.findall(r'<link[^>]+href=["\']([^"\']+\.css)["\']', html, re.I):
+    for rel in [p.split("?")[0] for p in re.findall(
+            r'<link[^>]+href="([^"]+\.css(?:\?[^"]*)?)"', html, re.I)]:
         if not rel.startswith(('https://', 'http://')) and not os.path.isfile(os.path.join(HERE, rel)):
             fail(f"missing CSS asset: {rel}")
-    for id_ in ("overview-stats", "home-earth-canvas", "time-date-range", "time-play", "research-rows", "portfolio-holdings", "journal-feed",
+    for id_ in ("overview-stats", "home-earth-canvas", "time-date-range", "time-play", "replay-mini-chart", "backtest-chart", "backtest-events", "backtest-orders", "research-rows", "portfolio-holdings", "journal-feed",
                 "journal-rejected", "lab-company", "lab-chart", "lab-sensitivity",
                 "lab-validation", "company-drawer", "classic-frame"):
         if f'id="{id_}"' not in html:
@@ -100,6 +103,11 @@ def check_javascript():
     smoke=subprocess.run([node,"tests/home_earth_smoke.js"],cwd=HERE,capture_output=True,text=True)
     if smoke.returncode:fail(f"Home globe runtime smoke test failed:\\n{smoke.stderr[-1800:]}")
     print(smoke.stdout.strip())
+    if "assets/replay-desk.js" not in assets:
+        fail("2024 replay JS was not included in the script verification")
+    if "assets/replay-desk.css" not in html:
+        fail("2024 replay stylesheet is missing")
+
 
 
 def check_pipeline():
@@ -171,6 +179,20 @@ def check_pipeline():
             if result.returncode:
                 fail(f"browser DCF differs from Python's published values:\n{result.stderr[-2400:]}")
             print(result.stdout.strip())
+        historical = subprocess.run(
+            [sys.executable, "historical_data/refresh_status.py"],
+            cwd=work, capture_output=True, text=True
+        )
+        if historical.returncode:
+            fail("Status refresh failed: " + historical.stderr[-1500:])
+        with open(os.path.join(work, "historical-status.json"),encoding="utf-8") as f:
+            report=json.load(f)
+        if report.get("validated_inputs") or report.get("status")!="source_data_incomplete":
+            fail("Empty source files must NEVER produce 2024 strategy returns")
+        if os.path.exists(os.path.join(work, "historical-backtest.json")):
+            fail("Invented or stale historical return file was published")
+        print("  Missing 2024 original filings correctly withhold historical returns")
+
         print(f"  {expected} companies, {len(port['holdings'])} holdings, {len(port['decisions'])} decisions, "
               f"value EUR {port['value']:,.0f}")
 
