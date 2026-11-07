@@ -1,0 +1,1 @@
+# kaatopaikka-capital
