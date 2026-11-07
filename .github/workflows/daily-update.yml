@@ -1,47 +1,35 @@
-name: Daily update
+name: Daily private data update
 
+# Kaatopaikka Capital has intentionally stopped public GitHub Pages publishing.
+# This workflow may refresh private repository artifacts but MUST NOT deploy Pages.
+# If the site is later unpublished in Settings > Pages, this workflow cannot restore it.
 on:
   schedule:
-    - cron: "20 17 * * 1-5"   # weekdays 17:20 UTC = 19:20 Finnish winter time, after Nordic markets close
-  workflow_dispatch:          # "Run workflow" button on the Actions tab
-  push:                       # a merged pull request goes live right away (publish only, no new prices)
-    branches: [main]
+    - cron: "20 17 * * 1-5"
+  workflow_dispatch:
 
 permissions:
-  contents: write             # save the updated portfolio / data back to the repository
-  pages: write                # publish the site
-  id-token: write
+  contents: write
 
-concurrency:                  # one run at a time; a merge during the daily run waits for it
+concurrency:
   group: daily-update
   cancel-in-progress: false
 
 jobs:
-  update-and-publish:
+  update-data:
     runs-on: ubuntu-latest
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
     steps:
       - uses: actions/checkout@v4
         with:
-          ref: ${{ github.event.repository.default_branch }}   # newest main, including the bot's last data commit
-
+          ref: ${{ github.event.repository.default_branch }}
       - uses: actions/setup-python@v5
-        if: github.event_name != 'push'
         with:
           python-version: "3.12"
-
       - name: Install packages
-        if: github.event_name != 'push'
         run: pip install -r requirements.txt
-
       - name: Fetch prices, update model, portfolio and simulation
-        if: github.event_name != 'push'
         run: python update_site.py
-
-      - name: Save results to the repository
-        if: github.event_name != 'push'
+      - name: Save results only to the repository
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
@@ -51,18 +39,8 @@ jobs:
             exit 0
           fi
           git commit -m "Daily update $(date -u +%Y-%m-%d)"
-          # someone may have merged a pull request while this run was working: put the data commit on top
           for attempt in 1 2 3; do
             git pull --rebase origin "${{ github.event.repository.default_branch }}" && git push && exit 0
             sleep 10
           done
           echo "Could not push the daily update" && exit 1
-
-      - uses: actions/configure-pages@v5
-
-      - uses: actions/upload-pages-artifact@v3
-        with:
-          path: "."
-
-      - id: deployment
-        uses: actions/deploy-pages@v4
