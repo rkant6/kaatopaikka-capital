@@ -323,10 +323,23 @@
     const s=createState(canvas,overlay);app=s;
     s.gpu=createGpu(s);
     if(s.gpu)s.mode='gpu';
-    else {s.cpu=createCpu(s);s.mode=s.cpu?'cpu':'none';}
+    else {
+      // A successfully allocated WebGL context cannot be reused for 2D
+      // drawing. If shader initialization failed after allocation, replace
+      // only the canvas; keep the time machine and overlays intact.
+      if(!s.canvas.getContext('2d')){
+        const fresh=document.createElement('canvas');
+        fresh.id='home-earth-canvas';
+        fresh.setAttribute('role','img');
+        fresh.setAttribute('aria-label',s.canvas.getAttribute('aria-label')||'Interactive realistic Earth');
+        s.canvas.replaceWith(fresh);
+        s.canvas=fresh;
+      }
+      s.cpu=createCpu(s);s.mode=s.cpu?'cpu':'none';
+    }
     geometry(s);
     bindControls(s);
-    if(typeof ResizeObserver!=='undefined')new ResizeObserver(()=>geometry(s)).observe(canvas);
+    if(typeof ResizeObserver!=='undefined')new ResizeObserver(()=>geometry(s)).observe(s.canvas);
     else window.addEventListener('resize',()=>geometry(s),{passive:true});
     // Always self-host the imagery, so the site does not depend on Google, NASA
     // or an external JavaScript library being available at render time.
@@ -335,15 +348,15 @@
       if(s.gpu)s.gpu.upload(images);
       if(s.cpu)s.cpu.upload(images);
       s.dirty=true;
-      if(images[0])canvas.parentElement.classList.add('earth-textured');
-      else canvas.parentElement.classList.add('earth-texture-missing');
-    }).catch(()=>{canvas.parentElement.classList.add('earth-texture-missing');});
+      if(images[0])s.canvas.parentElement.classList.add('earth-textured');
+      else s.canvas.parentElement.classList.add('earth-texture-missing');
+    }).catch(()=>{s.canvas.parentElement.classList.add('earth-texture-missing');});
     fetch('data.json',{cache:'no-store'}).then(r=>r.ok?r.json():null)
       .then(data=>{if(data?.companies)s.companies=data.companies;})
       .catch(()=>{});
     let last=performance.now(),lastDraw=0;
     function frame(now){
-      if(!canvas.isConnected||s.destroyed)return;
+      if(!s.canvas.isConnected||s.destroyed)return;
       const dt=clamp((now-last)/1000,0,.06);last=now;
       if(!document.hidden){
         if(!s.drag&&!s.reduced){
@@ -361,7 +374,7 @@
           else if(s.cpu)s.cpu.draw(sun,now);
           renderOverlay(s,now);
           lastDraw=now;s.dirty=false;
-          canvas.parentElement.classList.add('has-renderer');
+          s.canvas.parentElement.classList.add('has-renderer');
         }
       }
       requestAnimationFrame(frame);
