@@ -2,7 +2,7 @@
 
 Kaatopaikka Capital Investment Terminal: 30 pohjoismaisen teollisuusyhtiön margin reversion -malli, julkinen 10 000 euron paperisalkku ja sijoituspäätösten läpinäkyvä selittäminen. Sivun markkinadata päivittyy arkipäivisin. Alkuperäinen 3D-maapallo on säilytetty omana näkymänään.
 
-## Investment Terminal V2
+## Investment Terminal V3
 
 Sivustolla on seitsemän näkymää:
 
@@ -10,8 +10,8 @@ Sivustolla on seitsemän näkymää:
 - **Research:** koko 30 yhtiön lajittelun ja suodatuksen sisältävä osakescreener, CSV-vienti ja yritysten analyysimuistiot.
 - **Portfolio:** nykyiset omistukset, tuotto, kulut, maa- ja toimialajakaumat. Kaikki tuotot ovat paperisalkun tuottoja ilman osinkoja.
 - **Decision journal:** mallin päätöshistoria ja perustellut syyt sille, miksi muut yhtiöt eivät ole salkussa.
-- **Valuation lab:** käyttäjän omilla marginaali- ja pysyvyysarvoilla laskettava havainnollistava marginaalipolku. Ei muuta tuotantosalkkua eikä väitä olevansa täysi DCF.
-- **Nordic globe:** alkuperäinen interaktiivinen 3D-maapallo säilyy `classic.html`-tiedostossa.
+- **Valuation lab:** seitsemän muokattavaa oletusta, todellinen kymmenvuotinen DCF-laskenta ja 5 × 5 WACC–normaalimarginaali-herkkyysmatriisi. Laskenta käyttää Python-mallista julkaistua liikevaihto-, vero-, pääomarakennne- ja kurssidataa. Herkkyyskenaariot eivät muuta tuotantosalkkua.
+- **Nordic globe:** interaktiivinen 3D-maapallo upotettuna ilman päällekkäistä vanhaa navigaatiota, rankingia tai otsakkeita. `classic.html` toimii myös koko näytön itsenäisenä näkymänä.
 - **Methodology:** mallin kaavat, oletukset, tietolähteet, riskit ja tutkimukselliset rajoitukset.
 
 Yritysmuistioiden tekstisisältö muodostetaan julkaistun mallin numeroista deterministisesti. Tekstit eivät väitä sisältävänsä uusia yritysuutisia, analyytikon hyväksyntää tai henkilökohtaisia sijoitussuosituksia.
@@ -23,7 +23,7 @@ python check_site.py
 python -m http.server 8000
 ```
 
-Avaa `http://localhost:8000`. Uusi käyttöliittymä on `index.html`, jonka tyylit ja toiminta ovat `assets/terminal.css` ja `assets/terminal.js`. Sivu hakee samat JSON-tiedostot kuin päivittäinen malli. Testiajo luo mock-kursseilla vain väliaikaiset tiedostot.
+Avaa `http://localhost:8000`. Käyttöliittymä on `index.html`: perusulkoasu `assets/terminal.css`, Bloomberg-henkinen värikerros `assets/terminal-bloomberg.css`, käyttöliittymä `assets/terminal.js`, DCF-moottori `assets/valuation-engine.js` ja upotetun maapallon korjaus `assets/globe-theme.css`. Testiajo luo mock-kursseilla vain väliaikaiset tiedostot ja täsmäyttää kaikkien 30 yhtiön selainlaskelmat Pythonin DCF-arvoihin.
 
 GitHub Pages julkaisee muutokset vasta pull requestin mergeämisen jälkeen. V2 toimii ilman uutta maksullista rajapintaa tai palvelinpuolen käyttäjätiliä.
 
@@ -34,15 +34,16 @@ GitHub Pages julkaisee muutokset vasta pull requestin mergeämisen jälkeen. V2 
 - Paperisalkku käyttää teoreettisia saman päätöskurssin toteutuksia, joihin jo kyseinen kurssi vaikuttaa. Se ei ole toteuttamiskelpoisen kaupankäyntistrategian todistettu backtest.
 - Osingot, todellinen likviditeetti ja mahdolliset corporate action -oikaisut eivät sisälly tuottohistoriaan. Salkussa käytetään laskennallisia murto-osakkeita.
 - Monte Carlo -malli sisältää oletetun sijoitusstrategian edun: simulointitodennäköisyydet eivät ole empiirisesti validoituja ennusteita.
-- `model.xlsx` generoidaan päivittäin Pythonilla. Excel-kaavojen lopullinen uudelleenlaskenta tapahtuu Excelissä avattaessa.
+- `model.xlsx` generoidaan päivittäin Pythonilla. Excel-kaavojen lopullinen uudelleenlaskenta tapahtuu Excelissä avattaessa. Selaimen DCF-laskenta käyttää samaa julkaistua syötettä, mutta sitä ei pidä pitää erillisenä hintatietolähteenä.
 
 Varsinainen historiallisiin tuottoihin perustuva backtest tai luvallista reaaliaikadataa hyödyntävä palvelu vaatii oman pisteajallisen datan, lisenssit ja uuden toteutusvaiheen. Älkää näyttäkö niitä valmiina ominaisuuksina ilman todellisia testejä.
 
 | Tiedosto | Mitä se tekee |
 |---|---|
 | `index.html` | Uusi terminaali ja seitsemän näkymää. |
-| `assets/terminal.css`, `assets/terminal.js` | Terminaalin ulkoasu, analyysit, kaaviot ja käyttökokemus. |
-| `classic.html` | Alkuperäinen 3D-maapallo omalla UI:llaan. |
+| `assets/terminal.css`, `assets/terminal-bloomberg.css`, `assets/terminal.js` | Terminaalin ulkoasu, uusi värimaailma, analyysit, kaaviot ja käyttökokemus. |
+| `assets/valuation-engine.js` | Täysi kymmenvuotinen DCF, jota verrataan testissä Python-malliin. |
+| `classic.html`, `assets/globe-theme.css` | 3D-maapallo sekä itsenäisessä että korjatussa upotetussa näkymässä. |
 | `update_site.py` | Päivittäinen skripti: kurssit → malli → salkku → simulaatio → Excel. |
 | `nordic_margin_reversion.py` | Margin reversion -malli ja tilinpäätösdata (FY2013–FY2025). |
 | `data.json`, `portfolio.json`, `simulation.json` | Sivun data. Skripti kirjoittaa nämä joka päivä. |
