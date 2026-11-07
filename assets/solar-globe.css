@@ -1,0 +1,18 @@
+/* Astronomical lighting and source-aware fallback for the classic globe. */
+.globe-solar-status {position:absolute;top:17px;right:15px;z-index:4;pointer-events:none;
+  border:1px solid #73562b;background:#111a1ec7;color:#f9c874;border-radius:4px;
+  padding:7px 10px;font:600 10px var(--f-mono);letter-spacing:.04em}
+html.historical-unverified .labels,html.historical-unverified .tip {display:none!important}
+.globe-2d-fallback {position:absolute;inset:0;z-index:2;display:flex;flex-direction:column;
+  align-items:stretch;justify-content:center;background:
+  radial-gradient(ellipse at 50% 46%,#1b2932 0%,#0e1820 55%,#06090c 98%);overflow:hidden}
+.fallback-heading {display:flex;justify-content:space-between;gap:10px;align-items:center;
+  color:#ffbf69;font:600 11px var(--f-mono);letter-spacing:.09em;padding:26px 24px 0}
+.fallback-status {color:#9babb7;font:500 9px var(--f-mono);letter-spacing:0;text-align:right}
+.globe-2d-fallback svg {width:100%;height:100%;max-height:calc(100% - 100px);overflow:visible}
+.globe-2d-fallback circle {filter:drop-shadow(0 0 5px currentColor);transition:fill .15s ease}
+.fallback-footer {font:400 10px/1.6 var(--f-body);color:#8b9fac;max-width:600px;padding:5px 24px 18px}
+.globe-2d-fallback.impact {animation:solar-impact .85s ease-out both}
+@keyframes solar-impact {0%{box-shadow:inset 0 0 0 #ff643000}24%{box-shadow:inset 0 0 120px #ff643058}100%{box-shadow:inset 0 0 0 #ff643000}}
+@media(max-width:640px){.globe-solar-status{top:9px;right:9px;font-size:8px;padding:6px}.fallback-heading{padding:12px 14px 0;font-size:9px}.fallback-status{font-size:7px}.fallback-footer{font-size:8px;padding:0 13px 10px}}
+@media(prefers-reduced-motion:reduce){.globe-2d-fallback.impact{animation:none}.globe-2d-fallback circle{transition:none}}

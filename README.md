@@ -22,7 +22,7 @@ jälkikäteen valittu universumi sisältää myös selviytyjäharhan riskin.
 
 Sivustolla on seitsemän näkymää:
 
-- **Overview:** salkun kehitys, mallin parhaat signaalit, perustelut ja datan laatu.
+- **Overview:** etusivun interaktiivinen Solar Globe 2024–nykyhetki-aikajanalla sekä salkun kehitys, mallin parhaat signaalit, perustelut ja datan laatu.
 - **Research:** koko 30 yhtiön lajittelun ja suodatuksen sisältävä osakescreener, CSV-vienti ja yritysten analyysimuistiot.
 - **Portfolio:** nykyiset omistukset, tuotto, kulut, maa- ja toimialajakaumat. Kaikki tuotot ovat paperisalkun tuottoja ilman osinkoja.
 - **Decision journal:** mallin päätöshistoria ja perustellut syyt sille, miksi muut yhtiöt eivät ole salkussa.
@@ -32,6 +32,8 @@ Sivustolla on seitsemän näkymää:
 
 Yritysmuistioiden tekstisisältö muodostetaan julkaistun mallin numeroista deterministisesti. Tekstit eivät väitä sisältävänsä uusia yritysuutisia, analyytikon hyväksyntää tai henkilökohtaisia sijoitussuosituksia.
 
+Etusivun aurinkovalaistus perustuu valitun UTC-ajankohdan Auringon laskennalliseen sijaintiin; se on fysikaalinen havainnollistus, ei pilvi- tai säämalli. Maapalloa voi pyörittää ja zoomata. Aikajana liikkuu tammikuusta 2024 nykyhetkeen. Validoidut historialliset signaalit ja todetut arvonlaskut päivittyvät animaatioon **vasta**, kun pisteajallinen aineisto on käytettävissä. Tuolloin vahvistetun negatiivisen tapahtuman kohdalla näytetään meteoriefekti. WebGL:n puuttuessa näytetään 2D-koordinaattikartta.
+
 ### Kehitys ja paikallinen testaus
 
 ```bash
@@ -39,9 +41,9 @@ python check_site.py
 python -m http.server 8000
 ```
 
-Avaa `http://localhost:8000`. Käyttöliittymä on `index.html`: perusulkoasu `assets/terminal.css`, Bloomberg-henkinen värikerros `assets/terminal-bloomberg.css`, käyttöliittymä `assets/terminal.js`, DCF-moottori `assets/valuation-engine.js` ja upotetun maapallon korjaus `assets/globe-theme.css`. Testiajo luo mock-kursseilla vain väliaikaiset tiedostot ja täsmäyttää kaikkien 30 yhtiön selainlaskelmat Pythonin DCF-arvoihin.
+Avaa `http://localhost:8000`. Käyttöliittymä on `index.html`: perusulkoasu `assets/terminal.css`, Bloomberg-henkinen värikerros `assets/terminal-bloomberg.css`, etusivun aurinkoaikajana `assets/solar-home.css`, käyttöliittymä `assets/terminal.js`, DCF-moottori `assets/valuation-engine.js` sekä `assets/solar-globe.js` ja `assets/solar-globe.css`. Testiajo luo mock-kursseilla vain väliaikaiset tiedostot ja täsmäyttää kaikkien 30 yhtiön selainlaskelmat Pythonin DCF-arvoihin sekä testaa Auringon sijainnin tasaus- ja seisauspäivinä.
 
-GitHub Pages julkaisee muutokset vasta pull requestin mergeämisen jälkeen. V2 toimii ilman uutta maksullista rajapintaa tai palvelinpuolen käyttäjätiliä.
+GitHub Pages julkaisee muutokset vasta pull requestin mergeämisen jälkeen. Sivusto toimii ilman uutta maksullista rajapintaa tai palvelinpuolen käyttäjätiliä.
 
 ### Tiedon ajantasaisuus ja rajoitteet
 
@@ -59,6 +61,8 @@ Varsinainen historiallisiin tuottoihin perustuva backtest tai luvallista reaalia
 | `index.html` | Uusi terminaali ja seitsemän näkymää. |
 | `assets/terminal.css`, `assets/terminal-bloomberg.css`, `assets/terminal.js` | Terminaalin ulkoasu, uusi värimaailma, analyysit, kaaviot ja käyttökokemus. |
 | `assets/valuation-engine.js` | Täysi kymmenvuotinen DCF, jota verrataan testissä Python-malliin. |
+| `assets/solar-home.css`, `assets/solar-globe.js`, `assets/solar-globe.css` | Etusivun timeline, auringon todelliseen paikkaan perustuva varjostus, lähdevarmistetut meteorit ja WebGL-varakartta. |
+| `historical_backtest.py`, `historical_data/` | 2024 alusta alkava pisteajallinen backtest-runko ja tarkasti määritelty raporttisyöte. |
 | `classic.html`, `assets/globe-theme.css` | 3D-maapallo sekä itsenäisessä että korjatussa upotetussa näkymässä. |
 | `update_site.py` | Päivittäinen skripti: kurssit → malli → salkku → simulaatio → Excel. |
 | `nordic_margin_reversion.py` | Margin reversion -malli ja tilinpäätösdata (FY2013–FY2025). |

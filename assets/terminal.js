@@ -18,7 +18,8 @@
   const colorOf = s => ({LONG:'#4bd6a7',WATCH:'#ffbd54',NEUTRAL:'#95a2b6',SHORT:'#ff777c',EXCLUDED:'#747e8b'})[signal(s)];
   const signedClass = v => v > 0 ? 'positive' : v < 0 ? 'negative' : '';
   const pageNames = {overview:'OVERVIEW',research:'RESEARCH',portfolio:'PORTFOLIO',decisions:'DECISION JOURNAL',lab:'VALUATION LAB',globe:'NORDIC GLOBE',methodology:'METHODOLOGY'};
-  const state = {data:null,port:null,sim:null,sort:'rank',desc:false,lab:null,opened:null,lastFocus:null};
+  const state = {data:null,port:null,sim:null,history:null,sort:'rank',desc:false,lab:null,opened:null,lastFocus:null,
+    replayDay:null,playRaf:null,playDayFloat:null,playLastFrame:null};
   const find = id => state.data?.companies.find(c=>c.id === id);
 
   const stat = (label,value,note,klass='')=>`<div class="stat"><div class="stat-label">${esc(label)}</div><div class="stat-value ${klass}">${esc(value)}</div><div class="stat-note">${esc(note)}</div></div>`;
@@ -29,6 +30,7 @@
     $$('.nav-item').forEach(b=>b.classList.toggle('is-active',b.dataset.page===page));
     $('#breadcrumb-name').textContent=pageNames[page];
     if(page==='globe') { const f=$('#classic-frame'); if(!f.src && f.dataset.src) f.src=f.dataset.src; }
+    if(page!=='overview')stopTime();
     $('#sidebar').classList.remove('is-open');$('#menu-toggle').setAttribute('aria-expanded','false');
     if(updateHash && location.hash!==`#${page}`)history.replaceState(null,'',`#${page}`);
     window.scrollTo({top:0,behavior:'instant'});
@@ -129,6 +131,91 @@
     $('#overview-health').innerHTML=`<div class="health-list"><div class="health-item"><span class="health-icon">✓</span><span><strong>Last model update</strong><small>${esc(M.updated||'Not available')}</small></span></div><div class="health-item"><span class="health-icon ${stale?'warn':''}">${stale?'!':'✓'}</span><span><strong>${stale} potentially stale quote${stale===1?'':'s'}</strong><small>Price older than five calendar days</small></span></div><div class="health-item"><span class="health-icon ${flagged?'warn':''}">${flagged?'!':'✓'}</span><span><strong>${flagged} accounting data flag${flagged===1?'':'s'}</strong><small>Structural breaks require extra review</small></span></div><div class="health-item"><span class="health-icon">i</span><span><strong>Oldest quote: ${esc(oldest?.name||'—')}</strong><small>${esc(oldest?.priceDate||'')}</small></span></div></div>`;
   }
   function daysAgo(date) { const d=new Date(`${date}T23:59:59Z`);return Number.isNaN(d.getTime())?999:Math.max(0,Math.floor((Date.now()-d.getTime())/86400000)); }
+  const TIMELINE_START=Date.UTC(2024,0,1);
+  const DAY_MS=86400000;
+  const isoForDay=n=>new Date(TIMELINE_START+n*DAY_MS).toISOString().slice(0,10);
+  function lastReplaySnapshot(iso) {
+    const snaps=state.history?.snapshots||[];
+    for(let i=snaps.length-1;i>=0;i--)if(snaps[i].date<=iso)return snaps[i];
+    return null;
+  }
+  function sendGlobeTime(iso,meteor=null) {
+    const frame=$('#home-frame');if(!frame?.contentWindow)return;
+    const current=iso>=state.data?.meta?.priceTo;
+    const snap=!current?lastReplaySnapshot(iso):null;
+    frame.contentWindow.postMessage({type:'KC_GLOBE_TIME',date:iso,mode:current?'current':snap?'verified':'unverified',
+      companies:current?null:snap?.companies||null,event:meteor},location.origin);
+  }
+  function setTimelineDay(day,opts={}) {
+    const slider=$('#time-date-range');if(!slider)return;
+    const max=Number(slider.max);
+    day=clamp(Math.round(day),0,max);slider.value=day;
+    const iso=isoForDay(day),prev=state.replayDay;state.replayDay=iso;
+    $('#time-date-label').textContent=fmtDate(iso);
+    const current=iso>=state.data?.meta?.priceTo;
+    const verified=state.history?.validated_inputs===true && Array.isArray(state.history.history);
+    const snap=verified&&!current?lastReplaySnapshot(iso):null;
+    const status=$('#planet-data-state'),mode=$('#time-mode');
+    status.classList.toggle('verified',Boolean(current||snap));
+    status.textContent=current?'● CURRENT MODEL SNAPSHOT':snap?'● SOURCE-DATED REPLAY':'● HISTORICAL DATA AWAITED';
+    mode.textContent=current?'LATEST MARKET DATA':snap?'BACKTEST / FIXED UNIVERSE':'SOLAR GEOMETRY ONLY';
+    const title=$('#time-summary-title'),detail=$('#time-summary');
+    if(current){
+      title.textContent='Latest published model snapshot';
+      detail.textContent=`Company locations and signals as of ${state.data.meta.priceTo}. The live paper portfolio began in 2026, not in 2024.`;
+    }else if(snap){
+      const points=state.history.history.filter(x=>x.date<=iso);
+      const last=points.at(-1);
+      title.textContent=last?`${eur(last.nav)} · ${pct(last.return,1,true)} since 2024`:'Backtest has not traded yet';
+      detail.textContent=`Monthly positions based on reports public before ${snap.signal_asof}. Retrospective fixed universe: survivorship bias remains.`;
+    }else{
+      title.textContent='Historical equity results not verified';
+      detail.textContent='The original Q1–Q4 publication dates and complete prices are not yet provided. No future report values or invented backtest returns are displayed.';
+    }
+    const activeEvents=verified?(state.history.events||[]).filter(e=>Math.abs((Date.parse(e.date+'T00:00:00Z')-Date.parse(iso+'T00:00:00Z'))/DAY_MS)<=7):[];
+    $('#time-events').innerHTML=activeEvents.length?activeEvents.slice(-2).map(e=>`<div class="time-event"><span class="meteor-symbol">☄</span><span>${esc(e.date)} · ${esc(e.description)} (${pct(e.severity,1)})</span></div>`).join(''):'<span>No verified adverse event near this date.</span>';
+    let meteor=null;
+    if(opts.playing&&verified&&prev&&iso>prev){
+      meteor=(state.history.events||[]).find(e=>e.date>prev&&e.date<=iso&&e.type==='observed_drawdown')||null;
+    }
+    sendGlobeTime(iso,meteor);
+  }
+  function stopTime(){
+    if(state.playRaf!==null)cancelAnimationFrame(state.playRaf);
+    state.playRaf=null;state.playLastFrame=null;
+    const btn=$('#time-play');if(btn){btn.textContent='▶ Play 2024 → today';btn.setAttribute('aria-pressed','false');}
+  }
+  function playTime(now){
+    if(state.playRaf===null)return;
+    const dt=state.playLastFrame===null?0:Math.min((now-state.playLastFrame)/1000,.2);
+    state.playLastFrame=now;
+    state.playDayFloat+=dt*14; // Two weeks of historical time per second; Sun moves independently and smoothly.
+    const max=Number($('#time-date-range').max);
+    setTimelineDay(state.playDayFloat,{playing:true});
+    if(state.playDayFloat>=max){stopTime();return;}
+    state.playRaf=requestAnimationFrame(playTime);
+  }
+  function setupTimeMachine(){
+    const range=$('#time-date-range');
+    const max=Math.max(0,Math.floor((Date.now()-TIMELINE_START)/DAY_MS));
+    range.max=max;range.value=max;
+    $('#time-end-date').textContent=isoForDay(max).slice(0,7).replace('-',' / ');
+    range.addEventListener('input',()=>{stopTime();setTimelineDay(Number(range.value));});
+    $('#time-today').addEventListener('click',()=>{stopTime();setTimelineDay(max);});
+    $('#time-play').addEventListener('click',()=>{
+      if(state.playRaf!==null){stopTime();return;}
+      if(Number(range.value)>=max-1)setTimelineDay(0);
+      state.playDayFloat=Number(range.value);state.playLastFrame=null;state.playRaf=requestAnimationFrame(playTime);
+      $('#time-play').textContent='Ⅱ Pause replay';$('#time-play').setAttribute('aria-pressed','true');
+    });
+    $('#home-frame').addEventListener('load',()=>{if(state.replayDay)sendGlobeTime(state.replayDay);});
+    window.addEventListener('message',event=>{
+      if(event.origin===location.origin&&event.source===$('#home-frame')?.contentWindow&&event.data?.type==='KC_GLOBE_READY'){
+        if(state.replayDay)sendGlobeTime(state.replayDay);
+      }
+    });
+    setTimelineDay(max);
+  }
   function renderResearch() {
     const query=$('#research-query').value.trim().toLowerCase(),country=$('#research-country').value,sig=$('#research-signal').value;
     let rows=state.data.companies.filter(c=>(country==='all'||c.country===country)&&(sig==='all'||signal(c.signal)===sig)&&(`${c.name} ${c.ticker} ${c.group} ${c.country}`.toLowerCase().includes(query)));
@@ -269,14 +356,15 @@
   async function init() {
     dates();hookEvents();
     try {
-      const [data,port,sim]=await Promise.all([loadJSON('data.json'),loadJSON('portfolio.json'),loadJSON('simulation.json')]);
+      const [data,port,sim,historical]=await Promise.all([loadJSON('data.json'),loadJSON('portfolio.json'),loadJSON('simulation.json'),
+        loadJSON('historical-backtest.json').catch(()=>null)]);
       if(!Array.isArray(data?.companies)||!data?.meta||!port?.start_capital)throw new Error('Unexpected JSON schema');
-      Object.assign(state,{data,port,sim});
+      Object.assign(state,{data,port,sim,history:historical?.validated_inputs===true?historical:null});
       const stale=data.companies.filter(c=>daysAgo(c.priceDate)>5).length;
       $('#data-status').textContent=stale?`● ${stale} STALE QUOTES`:'● END-OF-DAY DATA';
       $('#data-status').classList.toggle('warning',stale>0);
       $('#side-status').textContent=`Updated ${data.meta.priceTo||'—'}`;
-      renderOverview();renderResearch();renderPortfolio();renderDecisions();renderLabOptions();renderMethod();exports();readHash();
+      renderOverview();renderResearch();renderPortfolio();renderDecisions();renderLabOptions();renderMethod();setupTimeMachine();exports();readHash();
     } catch(e) {
       console.error('Investment terminal load failed',e);
       $('#load-error').hidden=false;$('#data-status').textContent='● DATA UNAVAILABLE';$('#data-status').classList.add('warning');

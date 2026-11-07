@@ -46,6 +46,7 @@ def check_javascript():
     code = [body for attrs, body in blocks if "src=" not in attrs and "json" not in attrs.lower() and body.strip()]
     # The professional terminal keeps JavaScript in a separate, testable asset.
     assets = re.findall(r'<script[^>]+src=["\']([^"\']+\.js)["\']', html, re.I)
+    assets.append("assets/solar-globe.js")  # loaded by classic.html, not index.html
     for rel in assets:
         if rel.startswith(('https://', 'http://')):
             continue
@@ -59,13 +60,15 @@ def check_javascript():
     for rel in re.findall(r'<link[^>]+href=["\']([^"\']+\.css)["\']', html, re.I):
         if not rel.startswith(('https://', 'http://')) and not os.path.isfile(os.path.join(HERE, rel)):
             fail(f"missing CSS asset: {rel}")
-    for id_ in ("overview-stats", "research-rows", "portfolio-holdings", "journal-feed",
+    for id_ in ("overview-stats", "home-frame", "time-date-range", "time-play", "research-rows", "portfolio-holdings", "journal-feed",
                 "journal-rejected", "lab-company", "lab-chart", "lab-sensitivity",
                 "lab-validation", "company-drawer", "classic-frame"):
         if f'id="{id_}"' not in html:
             fail(f"new terminal is missing required element: {id_}")
     if not os.path.exists(os.path.join(HERE, "classic.html")):
         fail("original 3D globe was not preserved as classic.html")
+    if not os.path.isfile(os.path.join(HERE,"assets/solar-globe.css")):
+        fail("missing astronomical globe styles")
     if "classic.html?embed=1" not in html:
         fail("3D globe embed must use dedicated no-overlap mode")
     node = shutil.which("node")
@@ -81,6 +84,18 @@ def check_javascript():
             if r.returncode:
                 fail(f"JavaScript syntax error in index.html, inline <script> block {i}:\n{r.stderr.strip()}")
     print(f"  {len(code)} local script(s) referenced by index.html parse")
+    astronomy=("const s=require('./assets/solar-globe.js').solarDirection;"
+               "const v=s(new Date('2024-03-20T12:00:00Z'));"
+               "const j=s(new Date('2024-06-21T12:00:00Z'));"
+               "const d=s(new Date('2024-12-21T12:00:00Z'));"
+               "if(Math.abs(Math.asin(v[1])*180/Math.PI)>1||"
+               "Math.abs(Math.asin(j[1])*180/Math.PI-23.44)>1||"
+               "Math.abs(Math.asin(d[1])*180/Math.PI+23.44)>1)throw Error('Solar declination error');"
+               "for(const a of [v,j,d])if(Math.abs(Math.hypot(...a)-1)>1e-6)throw Error('Sun vector not normalized');"
+               "console.log('  March equinox and both solstices: solar geometry OK')")
+    check=subprocess.run([node,"-e",astronomy],cwd=HERE,capture_output=True,text=True)
+    if check.returncode:fail(f"Solar position calculation failed:\n{check.stderr}")
+    print(check.stdout.strip())
 
 
 def check_pipeline():
