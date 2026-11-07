@@ -1,10 +1,48 @@
 # Kaatopaikka Capital – nettisivu
 
-3D-maapallo, jolla näkyy 30 pohjoismaista teollisuusyhtiötä ja margin reversion -mallin signaalit. Mukana on Kaatopaikka Capitalin 10 000 euron paperisalkku. Sivu päivittyy automaattisesti joka arkipäivä.
+Kaatopaikka Capital Investment Terminal: 30 pohjoismaisen teollisuusyhtiön margin reversion -malli, julkinen 10 000 euron paperisalkku ja sijoituspäätösten läpinäkyvä selittäminen. Sivun markkinadata päivittyy arkipäivisin. Alkuperäinen 3D-maapallo on säilytetty omana näkymänään.
+
+## Investment Terminal V2
+
+Sivustolla on seitsemän näkymää:
+
+- **Overview:** salkun kehitys, mallin parhaat signaalit, perustelut ja datan laatu.
+- **Research:** koko 30 yhtiön lajittelun ja suodatuksen sisältävä osakescreener, CSV-vienti ja yritysten analyysimuistiot.
+- **Portfolio:** nykyiset omistukset, tuotto, kulut, maa- ja toimialajakaumat. Kaikki tuotot ovat paperisalkun tuottoja ilman osinkoja.
+- **Decision journal:** mallin päätöshistoria ja perustellut syyt sille, miksi muut yhtiöt eivät ole salkussa.
+- **Valuation lab:** käyttäjän omilla marginaali- ja pysyvyysarvoilla laskettava havainnollistava marginaalipolku. Ei muuta tuotantosalkkua eikä väitä olevansa täysi DCF.
+- **Nordic globe:** alkuperäinen interaktiivinen 3D-maapallo säilyy `classic.html`-tiedostossa.
+- **Methodology:** mallin kaavat, oletukset, tietolähteet, riskit ja tutkimukselliset rajoitukset.
+
+Yritysmuistioiden tekstisisältö muodostetaan julkaistun mallin numeroista deterministisesti. Tekstit eivät väitä sisältävänsä uusia yritysuutisia, analyytikon hyväksyntää tai henkilökohtaisia sijoitussuosituksia.
+
+### Kehitys ja paikallinen testaus
+
+```bash
+python check_site.py
+python -m http.server 8000
+```
+
+Avaa `http://localhost:8000`. Uusi käyttöliittymä on `index.html`, jonka tyylit ja toiminta ovat `assets/terminal.css` ja `assets/terminal.js`. Sivu hakee samat JSON-tiedostot kuin päivittäinen malli. Testiajo luo mock-kursseilla vain väliaikaiset tiedostot.
+
+GitHub Pages julkaisee muutokset vasta pull requestin mergeämisen jälkeen. V2 toimii ilman uutta maksullista rajapintaa tai palvelinpuolen käyttäjätiliä.
+
+### Tiedon ajantasaisuus ja rajoitteet
+
+- Yahoo Finance -hinnat voivat olla viivästyneitä tai puuttua; jokaisella yhtiöllä näkyy erillinen viimeisin kurssipäivä.
+- Tulos-, velka- ja osakemäärätiedot eivät päivity jokaisella hinnanhausta syntyvällä ajolla. Ne vaativat erillisen lähdepäivityksen tulosjulkistusten yhteydessä.
+- Paperisalkku käyttää teoreettisia saman päätöskurssin toteutuksia, joihin jo kyseinen kurssi vaikuttaa. Se ei ole toteuttamiskelpoisen kaupankäyntistrategian todistettu backtest.
+- Osingot, todellinen likviditeetti ja mahdolliset corporate action -oikaisut eivät sisälly tuottohistoriaan. Salkussa käytetään laskennallisia murto-osakkeita.
+- Monte Carlo -malli sisältää oletetun sijoitusstrategian edun: simulointitodennäköisyydet eivät ole empiirisesti validoituja ennusteita.
+- `model.xlsx` generoidaan päivittäin Pythonilla. Excel-kaavojen lopullinen uudelleenlaskenta tapahtuu Excelissä avattaessa.
+
+Varsinainen historiallisiin tuottoihin perustuva backtest tai luvallista reaaliaikadataa hyödyntävä palvelu vaatii oman pisteajallisen datan, lisenssit ja uuden toteutusvaiheen. Älkää näyttäkö niitä valmiina ominaisuuksina ilman todellisia testejä.
 
 | Tiedosto | Mitä se tekee |
 |---|---|
-| `index.html` | Itse nettisivu. |
+| `index.html` | Uusi terminaali ja seitsemän näkymää. |
+| `assets/terminal.css`, `assets/terminal.js` | Terminaalin ulkoasu, analyysit, kaaviot ja käyttökokemus. |
+| `classic.html` | Alkuperäinen 3D-maapallo omalla UI:llaan. |
 | `update_site.py` | Päivittäinen skripti: kurssit → malli → salkku → simulaatio → Excel. |
 | `nordic_margin_reversion.py` | Margin reversion -malli ja tilinpäätösdata (FY2013–FY2025). |
 | `data.json`, `portfolio.json`, `simulation.json` | Sivun data. Skripti kirjoittaa nämä joka päivä. |
