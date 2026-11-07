@@ -32,60 +32,17 @@
 @media(max-width:980px){.planet-grid{grid-template-columns:1fr}.planet-canvas{border-right:none;border-bottom:1px solid #28323b}.planet-canvas iframe{height:500px;min-height:500px}.time-desk{display:grid;grid-template-columns:1fr 1fr;column-gap:18px;padding:19px 22px}.time-desk-top,.time-date,.time-label,.time-desk input,.time-ends,.time-actions{grid-column:1}.time-fact,.time-event-list,.time-footnote{grid-column:2}.time-desk-top{grid-column:1/-1;margin-bottom:12px}.time-date{margin:0 0 17px}.time-fact{grid-row:2/6}.time-event-list{grid-row:6}.time-footnote{grid-column:1/-1;margin-top:10px}}
 @media(max-width:620px){.planet-head{display:block;padding:18px}.planet-head h2{font-size:23px}.planet-head p{font-size:11px}.planet-live{display:inline-flex;margin-top:12px}.planet-canvas iframe{height:395px;min-height:395px}.planet-notation{font-size:8px;top:10px;left:10px}.time-desk{display:flex;padding:20px 18px}.time-date{margin:14px 0 21px;font-size:27px}.time-fact{min-height:0}.time-footnote{margin-top:10px}}
 
-/* COSMIC DEEKU: large independently animated SVG mascot; pointer interactions still reach the Earth iframe. */
-.ape-theater{position:absolute;inset:0;z-index:3;overflow:hidden;pointer-events:none;isolation:isolate}
-.ape-space-halo{position:absolute;right:-9%;top:1%;width:64%;height:92%;border-radius:50%;background:radial-gradient(ellipse,#e57c3315 0%,#e57c3308 35%,transparent 72%);filter:blur(12px)}
-.ape-actor{position:absolute;right:-2%;bottom:-7%;width:clamp(170px,42%,345px);height:91%;display:flex;align-items:end;justify-content:center;transform-origin:52% 83%;will-change:transform,opacity;animation:ape-trip 19s cubic-bezier(.35,.12,.6,.88) infinite}
-.ape-actor img{display:block;width:100%;height:100%;object-fit:contain;filter:drop-shadow(0 12px 13px #02060cbd) drop-shadow(0 0 19px #e29a3225);user-select:none}
-.ape-rocket{position:absolute;left:53%;top:-10%;width:clamp(65px,12%,135px);height:53%;transform-origin:center 70%;opacity:0;filter:drop-shadow(0 0 17px #ffb3476b);will-change:transform,opacity;animation:ape-launch 19s linear infinite}
-.ape-rocket svg{height:100%;width:100%;overflow:visible;transform:rotate(16deg)}
-.ape-rocket-trail{position:absolute;bottom:-15%;left:45%;width:20%;height:50%;background:linear-gradient(#fff5a36b,#ff852c3d,transparent);filter:blur(9px);transform:rotate(14deg);animation:ape-exhaust .18s ease-in-out infinite alternate}
-.ape-flame{transform-box:fill-box;transform-origin:top center;animation:ape-flame-dance .19s ease-in-out infinite alternate}
-.ape-boom{position:absolute;left:31%;top:31%;font:900 clamp(12px,2vw,21px)/1 'IBM Plex Mono',monospace;color:#ffe6a0;text-shadow:0 0 12px #ff8400,2px 3px 0 #402617;opacity:0;transform:rotate(-12deg) scale(.5);animation:ape-clang 1.25s ease-out infinite}
-.ape-boom i{position:absolute;font-size:22px;font-style:normal}.ape-boom i:nth-child(2){left:-25px;top:-19px}.ape-boom i:nth-child(3){right:-24px;bottom:-9px}
-.ape-caption{position:absolute;bottom:12px;left:16px;padding:5px 8px;color:#eeb774;background:#15191fbc;border:1px solid #76532c5c;border-radius:3px;font:700 9px/1.3 'IBM Plex Mono',monospace;letter-spacing:.08em}
-.ape-motion-toggle{position:absolute;right:14px;bottom:12px;z-index:5;border:1px solid #9b793e85;background:#111923dd;color:#ffd68b;border-radius:5px;padding:7px 11px;font:700 10px 'IBM Plex Mono',monospace;cursor:pointer;box-shadow:0 3px 12px #0008}
-.ape-motion-toggle:hover,.ape-motion-toggle:focus-visible{border-color:#ffd36a;background:#29303d}
-.ape-theater.is-paused *{animation-play-state:paused!important}
-@keyframes ape-trip{
-  0%,26%{opacity:1;transform:translate(0,0) rotate(-2deg) scale(1)}
-  34%{opacity:1;transform:translate(8%,4%) rotate(5deg) scale(1.04)}
-  39%{opacity:0;transform:translate(63%,34%) rotate(18deg) scale(.72)}
-  40%,52%{opacity:0;transform:translate(-79%,-16%) rotate(-8deg) scale(.71)}
-  58%{opacity:1;transform:translate(-75%,-20%) rotate(-7deg) scale(.75)}
-  63%,73%{opacity:1;transform:translate(-79%,-21%) rotate(-8deg) scale(.76)}
-  80%{opacity:0;transform:translate(-79%,-39%) rotate(-8deg) scale(.68)}
-  81%{opacity:0;transform:translate(29%,13%) rotate(-4deg) scale(.86)}
-  89%,100%{opacity:1;transform:translate(0,0) rotate(-2deg) scale(1)}
-}
-@keyframes ape-launch{
-  0%,38%{opacity:0;transform:translate(200%,135%) rotate(-27deg) scale(.6)}
-  42%{opacity:1;transform:translate(182%,130%) rotate(-27deg) scale(.7)}
-  52%{opacity:1;transform:translate(7%,2%) rotate(-23deg) scale(1)}
-  58%{opacity:1;transform:translate(-30%,-11%) rotate(-17deg) scale(.95)}
-  63%{opacity:1;transform:translate(-37%,-20%) rotate(-12deg) scale(.93)}
-  70%{opacity:0;transform:translate(-37%,-70%) rotate(-12deg) scale(.8)}
-  100%{opacity:0;transform:translate(-37%,-70%) rotate(-12deg) scale(.8)}
-}
-@keyframes ape-clang{0%,23%,65%,100%{opacity:0;transform:rotate(-12deg) scale(.5)}31%{opacity:1;transform:rotate(-12deg) scale(1.07)}43%{opacity:0;transform:rotate(-8deg) scale(1.28)}}
-@keyframes ape-exhaust{from{opacity:.65;transform:rotate(14deg) scaleY(.75)}to{opacity:1;transform:rotate(14deg) scaleY(1.25)}}
-@keyframes ape-flame-dance{from{transform:scaleY(.77)}to{transform:scaleY(1.3)}}
-@media(max-width:720px){.ape-actor{right:-10%;width:53%;height:81%;bottom:-8%}.ape-rocket{left:43%;height:42%;width:16%}.ape-caption{font-size:7px;bottom:10px;left:8px;max-width:50%}.ape-motion-toggle{right:8px;bottom:8px;padding:6px 8px;font-size:9px}.ape-boom{font-size:13px}}
-@media(prefers-reduced-motion:reduce){.ape-theater *{animation:none!important}.ape-actor{opacity:1;transform:none}.ape-rocket{display:none}.ape-boom{display:none}}
-
-/* Reliable homepage Earth: own canvas, always rendered locally, even offline. */
+/* Standalone Canvas Earth; preserve Bloomberg terminal styling. */
 .planet-canvas{height:clamp(495px,58vh,680px);min-height:495px;isolation:isolate}
 .planet-canvas::before{content:"";position:absolute;left:19%;top:17%;width:min(61%,440px);aspect-ratio:1;border-radius:50%;background:radial-gradient(circle at 37% 29%,#376473,#132c41 54%,#07141f 84%,#050e17);box-shadow:inset -21px -8px 32px #040a13,0 0 30px #5aa6d225;z-index:0;pointer-events:none;opacity:.8;transition:opacity .25s}
 .planet-canvas.has-renderer::before{opacity:0}
 #home-earth-canvas{position:absolute;inset:0;display:block;width:100%;height:100%;z-index:1;touch-action:none;cursor:grab}
 #home-earth-canvas:active{cursor:grabbing}
 .planet-canvas .planet-notation{z-index:6;top:auto;bottom:17px;left:17px;max-width:49%;font-size:8px;line-height:1.65}
-.ape-theater{z-index:4}
-.ape-actor{top:5%;bottom:auto;right:-2%;width:clamp(208px,43%,390px);height:87%;opacity:1}
-.ape-actor img{max-height:100%;max-width:100%;object-fit:contain;object-position:center}
-.ape-rocket{top:2%;left:49%;height:48%;opacity:0}
-.ape-caption{bottom:46px;left:auto;right:13px;max-width:45%;text-align:right;z-index:5}
-.ape-motion-toggle{z-index:7}
 @media(max-width:980px){.planet-canvas{height:520px;min-height:520px}}
-@media(max-width:620px){.planet-canvas{height:400px;min-height:400px}.ape-actor{top:8%;right:-4%;width:56%;height:78%}.ape-rocket{top:4%;left:43%;height:39%}.ape-caption{font-size:6px;bottom:48px}.planet-canvas .planet-notation{font-size:7px;max-width:45%;bottom:9px;left:8px}}
 @media(prefers-reduced-motion:reduce){.planet-canvas::before{transition:none}}
+
+/* Graphite/amber terminal: fully unobstructed, interactive Earth visualization. */
+.planet-canvas{background:radial-gradient(ellipse at 43% 43%,#17232c 0%,#0c131a 56%,#070b10 100%)}
+.planet-canvas .planet-notation{top:14px;bottom:auto;left:16px;max-width:min(70%,430px);padding:7px 10px;background:rgba(9,16,22,.82);border-color:rgba(110,133,148,.27);letter-spacing:.065em}
+@media(max-width:620px){.planet-canvas .planet-notation{top:10px;left:10px;bottom:auto;max-width:88%;font-size:7px}}
