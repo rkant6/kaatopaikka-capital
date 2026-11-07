@@ -20,7 +20,8 @@ import tempfile
 import time
 
 HERE = os.path.dirname(os.path.abspath(__file__))
-PY_FILES = ["update_site.py", "nordic_margin_reversion.py", "check_site.py"]
+PY_FILES = ["update_site.py", "nordic_margin_reversion.py", "historical_backtest.py", "check_site.py",
+            "tests/test_historical_backtest.py"]
 OUTPUTS = ["data.json", "portfolio.json", "simulation.json", "model.xlsx"]
 
 
@@ -160,6 +161,11 @@ def main():
                      ("Test run on mock prices", check_pipeline)):
         print(f"== {name}", flush=True)
         fn()
+    print("== Point-in-time backtest tests",flush=True)
+    r=subprocess.run([sys.executable,"-m","unittest","discover","-s","tests","-p","test_*.py"],
+                     cwd=HERE,capture_output=True,text=True)
+    if r.returncode:fail(f"Historical replay checks failed:\n{r.stdout}\n{r.stderr}")
+    print(r.stderr.strip().splitlines()[-1])
     print("\nAll checks passed.")
 
 
