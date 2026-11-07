@@ -17,7 +17,7 @@
   const tag = s => {const k=signal(s);return `<span class="tag tag-${k.toLowerCase()}">${k === 'SHORT' ? 'AVOID' : k}</span>`;};
   const colorOf = s => ({LONG:'#4bd6a7',WATCH:'#ffbd54',NEUTRAL:'#95a2b6',SHORT:'#ff777c',EXCLUDED:'#747e8b'})[signal(s)];
   const signedClass = v => v > 0 ? 'positive' : v < 0 ? 'negative' : '';
-  const pageNames = {overview:'OVERVIEW',research:'RESEARCH',portfolio:'PORTFOLIO',decisions:'DECISION JOURNAL',lab:'VALUATION LAB',globe:'NORDIC GLOBE',methodology:'METHODOLOGY'};
+  const pageNames = {overview:'OVERVIEW',research:'RESEARCH',portfolio:'PORTFOLIO',decisions:'DECISION JOURNAL',lab:'VALUATION LAB',globe:'NORDIC GLOBE',methodology:'METHODOLOGY',backtest:'2024 STRATEGY REPLAY'};
   const state = {data:null,port:null,sim:null,history:null,sort:'rank',desc:false,lab:null,opened:null,lastFocus:null,
     replayDay:null,playRaf:null,playDayFloat:null,playLastFrame:null};
   const find = id => state.data?.companies.find(c=>c.id === id);
@@ -155,7 +155,9 @@
     const slider=$('#time-date-range');if(!slider)return;
     const max=Number(slider.max);
     day=clamp(Math.round(day),0,max);slider.value=day;
-    const iso=isoForDay(day),prev=state.replayDay;state.replayDay=iso;
+    const iso=isoForDay(day),prev=state.replayDay;
+    if(iso===prev&&opts.playing)return; // Avoid expensive DOM/plot updates every animation frame.
+    state.replayDay=iso;
     $('#time-date-label').textContent=fmtDate(iso);
     const current=iso>=state.data?.meta?.priceTo;
     const verified=state.history?.validated_inputs===true && Array.isArray(state.history.history);
@@ -184,6 +186,7 @@
       meteor=(state.history.events||[]).find(e=>e.date>prev&&e.date<=iso&&e.type==='observed_drawdown')||null;
     }
     sendGlobeTime(iso,meteor);
+    window.dispatchEvent(new CustomEvent('kc:timeline',{detail:{iso,playing:Boolean(opts.playing),from:prev}}));
   }
   function stopTime(){
     if(state.playRaf!==null)cancelAnimationFrame(state.playRaf);
@@ -194,7 +197,7 @@
     if(state.playRaf===null)return;
     const dt=state.playLastFrame===null?0:Math.min((now-state.playLastFrame)/1000,.2);
     state.playLastFrame=now;
-    state.playDayFloat+=dt*14; // Two weeks of historical time per second; Sun moves independently and smoothly.
+    state.playDayFloat+=dt*clamp(Number($('#replay-speed')?.value)||14,1,70); // Playback clock; real market facts require source-dated inputs.
     const max=Number($('#time-date-range').max);
     setTimelineDay(state.playDayFloat,{playing:true});
     if(state.playDayFloat>=max){stopTime();return;}
@@ -358,6 +361,38 @@
     });
   }
   async function loadJSON(path) {const res=await fetch(`${path}?v=${Date.now()}`,{cache:'no-store'});if(!res.ok)throw new Error(`${path} HTTP ${res.status}`);return res.json();}
+  async function refreshLatestPublishedData() {
+    if(document.hidden||!state.data)return;
+    try{
+      const [data,port,sim,historical]=await Promise.all([
+        loadJSON('data.json'),loadJSON('portfolio.json'),loadJSON('simulation.json'),
+        loadJSON('historical-backtest.json').catch(()=>null)
+      ]);
+      if(!Array.isArray(data?.companies)||!port?.start_capital)return;
+      const hasChanged=data?.meta?.updated!==state.data?.meta?.updated ||
+        port?.history?.length!==state.port?.history?.length ||
+        historical?.last_rebuilt_utc!==state.history?.last_rebuilt_utc;
+      if(!hasChanged)return;
+      Object.assign(state,{data,port,sim,
+        history:historical?.validated_inputs===true?historical:null});
+      const stale=data.companies.filter(c=>daysAgo(c.priceDate)>5).length;
+      $('#data-status').textContent=stale?'● '+stale+' STALE QUOTES':'● EOD DATA · AUTO-SYNC';
+      $('#data-status').classList.toggle('warning',stale>0);
+      $('#side-status').textContent='Updated '+(data.meta.priceTo||'—');
+      renderOverview();renderResearch();renderPortfolio();renderDecisions();
+      renderMethod();
+      if(state.replayDay){
+        const offset=Math.round((Date.parse(state.replayDay+'T00:00:00Z')-TIMELINE_START)/DAY_MS);
+        setTimelineDay(offset);
+      }
+      window.dispatchEvent(new CustomEvent('kc:data-refreshed',{
+        detail:{priceTo:data.meta.priceTo}
+      }));
+    }catch(e){
+      // Never replace valid EOD data with a transient network failure.
+      console.warn('EOD update check failed',e);
+    }
+  }
   async function init() {
     dates();hookEvents();
     try {
@@ -370,6 +405,7 @@
       $('#data-status').classList.toggle('warning',stale>0);
       $('#side-status').textContent=`Updated ${data.meta.priceTo||'—'}`;
       renderOverview();renderResearch();renderPortfolio();renderDecisions();renderLabOptions();renderMethod();setupTimeMachine();exports();readHash();
+      setInterval(refreshLatestPublishedData,90000); // Poll published snapshots; not a live exchange feed.
     } catch(e) {
       console.error('Investment terminal load failed',e);
       $('#load-error').hidden=false;$('#data-status').textContent='● DATA UNAVAILABLE';$('#data-status').classList.add('warning');
