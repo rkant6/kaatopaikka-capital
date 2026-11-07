@@ -4,6 +4,22 @@ Kaatopaikka Capital Investment Terminal: 30 pohjoismaisen teollisuusyhtiön marg
 
 ## Investment Terminal V3
 
+### Historiallinen 2024–2026 tutkimusbacktest
+
+`historical_backtest.py` rakentaa erillisen, pisteajallisen historian. Se lukee
+`historical_data/`-hakemiston alkuperäiset Q1–Q4-raportit, vuosimarginaalit,
+osakekurssit, splittitapahtumat, osingot ja FX-hinnat. Malli käyttää vain
+**edellisen session** kurssia ja siihen mennessä julkaistuja tulosraportteja;
+se toteuttaa kaupat seuraavan session päätöskurssiin ja veloittaa 0,15 % kulut.
+Yhtiökohtaiset perustelut, kuukausittaiset signaalit ja päiväkohtaiset
+arvonmuutokset kirjautuvat rekonstruoidussa historiassa.
+
+**Tärkeä:** historiallisia Q1–Q4-julkaisupäiviä ja täydellisiä hinta-/FX-sarjoja
+ei ole vielä tallennettu projektiin. Siksi vuoden 2024 tuottoa **ei näytetä**
+todellisena backtestinä ennen kuin ne on kerätty ja tarkistettu.
+`historical_data/README.md` listaa tarkan aineistomuodon. Nykyinen 30 yhtiön
+jälkikäteen valittu universumi sisältää myös selviytyjäharhan riskin.
+
 Sivustolla on seitsemän näkymää:
 
 - **Overview:** salkun kehitys, mallin parhaat signaalit, perustelut ja datan laatu.
