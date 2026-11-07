@@ -86,7 +86,7 @@ assert.ok(zoom()>1.7,'Keyboard + must zoom in');
 listeners.keydown({key:'0',preventDefault(){}});
 assert.ok(Math.abs(zoom()-1)<.00001,'Keyboard 0 must reset zoom');
 listeners.wheel({deltaY:900,deltaMode:0,preventDefault(){}});
-assert.ok(zoom()>=.55-1e-6&&zoom()<.75,'Zoom out must respect safe bounds');
+assert.ok(zoom()>=.4-1e-6&&zoom()<.75,'Zoom out must respect expanded 40%–800% bounds');
 buttons['earth-zoom-reset'].events.click();
 
 assert.ok(!fs.readFileSync('assets/home-earth.js','utf8').includes('LAND_BITS'),
