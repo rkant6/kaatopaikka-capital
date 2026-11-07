@@ -1,35 +1,47 @@
-name: Daily private data update
+name: Daily update & GitHub Pages
 
-# Kaatopaikka Capital has intentionally stopped public GitHub Pages publishing.
-# This workflow may refresh private repository artifacts but MUST NOT deploy Pages.
-# If the site is later unpublished in Settings > Pages, this workflow cannot restore it.
 on:
   schedule:
-    - cron: "20 17 * * 1-5"
+    - cron: "20 17 * * 1-5"  # weekdays after Nordic market close
   workflow_dispatch:
+  push:
+    branches: [main]
 
 permissions:
   contents: write
+  pages: write
+  id-token: write
 
 concurrency:
   group: daily-update
   cancel-in-progress: false
 
 jobs:
-  update-data:
+  update-and-publish:
     runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
     steps:
       - uses: actions/checkout@v4
         with:
           ref: ${{ github.event.repository.default_branch }}
+
       - uses: actions/setup-python@v5
+        if: github.event_name != 'push'
         with:
           python-version: "3.12"
+
       - name: Install packages
+        if: github.event_name != 'push'
         run: pip install -r requirements.txt
+
       - name: Fetch prices, update model, portfolio and simulation
+        if: github.event_name != 'push'
         run: python update_site.py
-      - name: Save results only to the repository
+
+      - name: Save results to the repository
+        if: github.event_name != 'push'
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
@@ -44,3 +56,12 @@ jobs:
             sleep 10
           done
           echo "Could not push the daily update" && exit 1
+
+      - uses: actions/configure-pages@v5
+
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: "."
+
+      - id: deployment
+        uses: actions/deploy-pages@v4
