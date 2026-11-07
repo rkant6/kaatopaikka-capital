@@ -1,0 +1,16 @@
+{
+  "generated_utc": "2026-11-07T00:00:00Z",
+  "research_window_start": "2024-01-01",
+  "universe_companies": 30,
+  "input_rows": {
+    "filings": 0,
+    "annual_margins": 0,
+    "prices": 0
+  },
+  "status": "source_data_incomplete",
+  "validated_inputs": false,
+  "reason": "No source-dated filings, annual margins or historical prices have been supplied.",
+  "data_delay": "Published market snapshot is end-of-day, not tick-by-tick.",
+  "source_authenticity": "Original financial report URLs and dates require human verification.",
+  "retrospective": "Current 2026-selected 30-name universe; survivorship and strategy-selection bias."
+}
