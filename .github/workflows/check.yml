@@ -1,0 +1,35 @@
+name: Check
+
+# Runs on every pull request, before anything goes live.
+on:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 2        # the pull request's merge commit and its base
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install packages
+        run: pip install -r requirements.txt
+
+      - name: Generated files are left to the daily bot
+        run: |
+          changed=$(git diff --name-only HEAD^1 HEAD -- data.json portfolio.json simulation.json model.xlsx)
+          if [ -n "$changed" ]; then
+            echo "::error::This pull request changes files the daily update writes: $changed"
+            echo "Undo them with: git checkout origin/main -- data.json portfolio.json simulation.json model.xlsx"
+            exit 1
+          fi
+
+      - name: Python, JavaScript and a test run on mock prices
+        run: python check_site.py
