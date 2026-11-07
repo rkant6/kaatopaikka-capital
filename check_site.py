@@ -97,6 +97,12 @@ def check_javascript():
     check=subprocess.run([node,"-e",astronomy],cwd=HERE,capture_output=True,text=True)
     if check.returncode:fail(f"Solar position calculation failed:\n{check.stderr}")
     print(check.stdout.strip())
+    smoke=subprocess.run([node,"tests/home_earth_smoke.js"],cwd=HERE,capture_output=True,text=True)
+    if smoke.returncode:fail(f"Home globe runtime smoke test failed:\\n{smoke.stderr[-1800:]}")
+    print(smoke.stdout.strip())
+    import xml.etree.ElementTree as ET
+    try:ET.parse(os.path.join(HERE,"assets","cosmic-ape.svg"))
+    except ET.ParseError as e:fail(f"Monkey SVG is not valid XML: {e}")
 
 
 def check_pipeline():
