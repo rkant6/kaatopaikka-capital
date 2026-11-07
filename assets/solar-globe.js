@@ -4,7 +4,7 @@
 (function () {
   'use strict';
   const DAY=86400000, RAD=Math.PI/180;
-  let runtime=null, fallback=null, pendingPacket=null, currentDate=new Date().toISOString().slice(0,10);
+  let runtime=null, fallback=null, fallbackView=null, pendingPacket=null, currentDate=new Date().toISOString().slice(0,10);
   let mode='current', activeMeteor=null, meteorLast=0;
 
   // Approximate apparent solar coordinates (Meeus/NOAA low-order terms),
@@ -141,13 +141,129 @@
       ?'HISTORICAL SIGNALS NOT YET VERIFIED · LOCATION VIEW ONLY'
       :mode==='verified'?'POINT-IN-TIME COMPANY SIGNALS':'CURRENT COMPANY LOCATIONS';
     const map=packet.companies?new Map(packet.companies.map(x=>[x.id,x])):null;
-    fallback.querySelectorAll('[data-company]').forEach(el=>{
-      const c=map?.get(el.dataset.company);
-      const sig=mode==='unverified'?'unverified':c?.signal||el.dataset.originalSignal;
-      const pal={LONG:'#52dbac',WATCH:'#ffbd55',NEUTRAL:'#a4afbd',SHORT:'#ff777c',EXCLUDED:'#738293',unverified:'#75899a'};
-      el.setAttribute('fill',pal[String(sig).split(' ')[0]]||pal.NEUTRAL);
+    if(fallbackView)fallbackView.companies.forEach(c=>{
+      const historical=map?.get(c.id);
+      c.activeSignal=mode==='unverified'?'unverified':mode==='verified'
+        ?historical?.signal||'NEUTRAL':c.signal;
     });
     if(packet.event){fallback.classList.remove('impact');void fallback.offsetWidth;fallback.classList.add('impact');}
+  }
+
+  // CPU-only orthographic renderer. It uses the same embedded Natural Earth
+  // coast geometry as the WebGL globe, and therefore needs no third-party
+  // service, static image, or network request for the shape of the continents.
+  // It is deliberately lightweight: a 240 px shadow texture is updated only
+  // four times per second and coastlines are drawn at 25 fps at most.
+  function drawFallback(view,now) {
+    const {canvas,ctx,companies,coasts,shade,shadeCtx}=view;
+    const {width:w,height:h}=canvas;
+    if(!w||!h)return;
+    const t=(now-view.started);
+    const auto=view.reducedMotion?0:t*.0011;
+    const lon0=(view.lon+auto)*RAD,lat0=view.lat*RAD;
+    const sin0=Math.sin(lat0),cos0=Math.cos(lat0);
+    const radius=Math.max(40,Math.min(w*.38,h*.44));
+    const cx=w*.50,cy=h*.51;
+    const project=(lon,lat)=>{
+      const a=lon*RAD-lon0,b=lat*RAD;
+      const sa=Math.sin(a),ca=Math.cos(a),sb=Math.sin(b),cb=Math.cos(b);
+      const z=sin0*sb+cos0*cb*ca;
+      return [cx+radius*cb*sa,cy-radius*(cos0*sb-sin0*cb*ca),z];
+    };
+    ctx.clearRect(0,0,w,h);
+    // Subtle starfield: no random values are sampled during animation.
+    for(let i=0;i<65;i++){
+      const px=(Math.sin(i*127.1)*43758.5453%1+1)%1*w;
+      const py=(Math.sin(i*71.6+4)*15631.23%1+1)%1*h;
+      ctx.fillStyle=i%5===0?'#263e50':'#162937';ctx.fillRect(px,py,1,1);
+    }
+    const solarTime=new Date(Date.parse(currentDate+'T12:00:00Z')+t*DAY/120000);
+    const sun=solarDirection(solarTime);
+    const sunLon=Math.atan2(sun[0],sun[2]);
+    const lit=project(sunLon/RAD,Math.asin(sun[1])/RAD);
+    const halo=ctx.createRadialGradient(lit[0],lit[1],radius*.07,lit[0],lit[1],radius*1.1);
+    halo.addColorStop(0,'#f5b44b26');halo.addColorStop(.3,'#da882010');halo.addColorStop(1,'#d98a1400');
+    ctx.fillStyle=halo;ctx.fillRect(cx-radius*2,cy-radius*2,radius*4,radius*4);
+    const atmosphere=ctx.createRadialGradient(cx,cy,radius*.79,cx,cy,radius*1.12);
+    atmosphere.addColorStop(0,'#0a172800');atmosphere.addColorStop(.78,'#1b7da811');
+    atmosphere.addColorStop(.88,'#47c5e929');atmosphere.addColorStop(1,'#47c5e900');
+    ctx.fillStyle=atmosphere;ctx.beginPath();ctx.arc(cx,cy,radius*1.13,0,Math.PI*2);ctx.fill();
+    const ocean=ctx.createRadialGradient(cx-radius*.3,cy-radius*.4,radius*.1,cx,cy,radius);
+    ocean.addColorStop(0,'#21475b');ocean.addColorStop(.62,'#102f43');ocean.addColorStop(1,'#061521');
+    ctx.beginPath();ctx.arc(cx,cy,radius,0,2*Math.PI);ctx.fillStyle=ocean;ctx.fill();
+    ctx.save();ctx.beginPath();ctx.arc(cx,cy,radius-.6,0,2*Math.PI);ctx.clip();
+    // Longitude and latitude are actual sphere great/small circles, clipped
+    // against the visible hemisphere instead of being painted as a flat grid.
+    ctx.strokeStyle='#42677864';ctx.lineWidth=.7;
+    const curve=points=>{
+      ctx.beginPath();let open=false;
+      for(const [lo,la] of points){const p=project(lo,la);
+        if(p[2]<.01){open=false;continue;}
+        if(open)ctx.lineTo(p[0],p[1]);else ctx.moveTo(p[0],p[1]);open=true;
+      }
+      ctx.stroke();
+    };
+    for(let lat=-75;lat<=75;lat+=15){const pts=[];for(let lon=-180;lon<=180;lon+=3)pts.push([lon,lat]);curve(pts);}
+    for(let lon=-180;lon<180;lon+=15){const pts=[];for(let lat=-90;lat<=90;lat+=3)pts.push([lon,lat]);curve(pts);}
+    // Built-in country/coastline source of the primary globe, simplified by
+    // skipping every other point (no inaccurate hand-drawn continents).
+    ctx.fillStyle='#315347';ctx.strokeStyle='#71ad9488';ctx.lineWidth=.76;
+    for(const poly of coasts){
+      if(poly.length<8)continue;
+      ctx.beginPath();let visible=0,open=false;
+      for(let j=0;j<poly.length;j+=4){
+        const p=project(poly[j],poly[j+1]);
+        if(p[2]<.015){open=false;continue;}
+        if(!open){ctx.moveTo(p[0],p[1]);open=true;}else ctx.lineTo(p[0],p[1]);
+        visible++;
+      }
+      if(visible>3 && open){ctx.closePath();ctx.fill();}if(visible>1)ctx.stroke();
+    }
+    // A screen-space night terminator, shaded per surface normal. The mask
+    // is recomputed only when the Sun or camera position materially changes.
+    if(now-view.lastShadow>250||view.lastShadow<0){
+      view.lastShadow=now;
+      const n=shade.width,img=shadeCtx.createImageData(n,n),d=img.data;
+      for(let y=0;y<n;y++)for(let x=0;x<n;x++){
+        const sx=(x+0.5)*2/n-1,sy=1-(y+.5)*2/n,rr=sx*sx+sy*sy;
+        if(rr>=1)continue;
+        const front=Math.sqrt(1-rr);
+        const yn=sy*cos0+front*sin0;
+        const forward=-sy*sin0+front*cos0;
+        const worldLon=lon0+Math.atan2(sx,forward);
+        const latCos=Math.sqrt(Math.max(0,1-yn*yn));
+        const sunlight=latCos*Math.sin(worldLon)*sun[0]+yn*sun[1]+latCos*Math.cos(worldLon)*sun[2];
+        const fade=Math.min(1,Math.max(0,(sunlight+.08)/.27));
+        const alpha=Math.round((1-fade)*216);
+        const o=(y*n+x)*4;d[o]=1;d[o+1]=8;d[o+2]=23;d[o+3]=alpha;
+      }
+      shadeCtx.putImageData(img,0,0);
+    }
+    ctx.drawImage(shade,cx-radius,cy-radius,radius*2,radius*2);
+    ctx.restore();
+    const pal={LONG:'#52dbac',WATCH:'#ffbd55',NEUTRAL:'#a4afbd',SHORT:'#ff777c',EXCLUDED:'#738293',unverified:'#75899a'};
+    for(const c of companies){
+      if(!Number.isFinite(c.lat)||!Number.isFinite(c.lon))continue;
+      const p=project(c.lon,c.lat);if(p[2]<0)continue;
+      const signal=String(c.activeSignal||c.signal||'NEUTRAL').split(' ')[0];
+      const color=pal[signal]||pal.NEUTRAL;
+      ctx.fillStyle=color;ctx.shadowColor=color;ctx.shadowBlur=7;
+      ctx.beginPath();ctx.arc(p[0],p[1],Math.max(2.5,w*.004),0,2*Math.PI);ctx.fill();
+      ctx.shadowBlur=0;ctx.lineWidth=1.25;ctx.strokeStyle='#071219';ctx.stroke();
+    }
+    ctx.strokeStyle='#81b7c455';ctx.lineWidth=1.3;ctx.beginPath();ctx.arc(cx,cy,radius,0,2*Math.PI);ctx.stroke();
+  }
+
+  function startFallbackAnimation(view) {
+    let previous=0;
+    const frame=now=>{
+      if(!view.canvas.isConnected)return;
+      if(!document.hidden&&(now-previous>38||!previous)){
+        previous=now;drawFallback(view,now);
+      }
+      requestAnimationFrame(frame);
+    };
+    requestAnimationFrame(frame);
   }
 
   async function renderFallback() {
@@ -157,17 +273,21 @@
     let companies=[];
     try{const response=await fetch('data.json',{cache:'no-store'});if(response.ok)companies=(await response.json()).companies||[];}catch(_e){}
     const el=document.createElement('div');el.className='globe-2d-fallback';
-    const clean=text=>String(text??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-    const W=710,H=455,x=lon=>66+(lon-5)/31*580,y=lat=>40+(72-lat)/19*375;
-    const grid=[55,60,65,70].map(lat=>`<line x1="54" y1="${y(lat)}" x2="668" y2="${y(lat)}" stroke="#314251" stroke-dasharray="3 9"/><text x="12" y="${y(lat)+4}" fill="#7c98ab" font-size="10">${lat}°N</text>`).join('');
-    const circles=companies.map(c=>{
-      if(!Number.isFinite(c.lat)||!Number.isFinite(c.lon))return '';
-      const sig=String(c.signal||'NEUTRAL').split(' ')[0];
-      const pal={LONG:'#52dbac',WATCH:'#ffbd55',NEUTRAL:'#a4afbd',SHORT:'#ff777c',EXCLUDED:'#738293'};
-      return `<circle data-company="${clean(c.id)}" data-original-signal="${clean(sig)}" cx="${x(c.lon).toFixed(1)}" cy="${y(c.lat).toFixed(1)}" r="5" fill="${pal[sig]||pal.NEUTRAL}" stroke="#0b1118" stroke-width="2"><title>${clean(c.name)} · ${clean(c.city)} · ${clean(sig)}</title></circle>`;
-    }).join('');
-    el.innerHTML=`<div class="fallback-heading">NORDIC LOCATION GRID <span class="fallback-status">CURRENT COMPANY LOCATIONS</span></div><svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Two-dimensional latitude-longitude map of Nordic corporate headquarters">${grid}<text x="190" y="70" fill="#46586a" font-size="13" letter-spacing="3">NORWAY</text><text x="353" y="92" fill="#46586a" font-size="13" letter-spacing="3">SWEDEN</text><text x="516" y="110" fill="#46586a" font-size="13" letter-spacing="3">FINLAND</text><text x="173" y="393" fill="#46586a" font-size="13" letter-spacing="3">DENMARK</text>${circles}</svg><div class="fallback-footer">3D rendering is unavailable in this browser. This chart uses the published HQ coordinates. It is a location grid, not a geographic boundary map.</div>`;
+    el.innerHTML='<div class="fallback-heading">EARTH / LIVE SOLAR POSITION <span class="fallback-status">CURRENT COMPANY LOCATIONS</span></div><canvas class="fallback-earth" role="img" aria-label="Rotating orthographic globe with actual coastlines, solar day-night shading and Nordic company headquarters"></canvas><div class="fallback-footer">Canvas mode · drag to rotate · UTC solar terminator · company positions use published headquarters. 3D hardware graphics unavailable.</div>';
     warn.style.display='none';stage.append(el);fallback=el;
+    const canvas=el.querySelector('canvas'),ctx=canvas.getContext('2d',{alpha:true});
+    const shade=document.createElement('canvas');shade.width=shade.height=240;
+    const shadeCtx=shade.getContext('2d');
+    if(!ctx||!shadeCtx)return;
+    const view={canvas,ctx,shade,shadeCtx,companies,coasts:typeof GEO!=='undefined'&&Array.isArray(GEO.land)?GEO.land:[],lon:17,lat:59,started:performance.now(),lastShadow:-1,reducedMotion:matchMedia('(prefers-reduced-motion: reduce)').matches};
+    const resize=()=>{const r=canvas.getBoundingClientRect(),dpr=Math.min(1.5,window.devicePixelRatio||1);canvas.width=Math.max(1,Math.round(r.width*dpr));canvas.height=Math.max(1,Math.round(r.height*dpr));};
+    resize();new ResizeObserver(resize).observe(canvas);
+    let dragging=false,lastX=0,lastY=0;
+    canvas.addEventListener('pointerdown',e=>{dragging=true;lastX=e.clientX;lastY=e.clientY;canvas.setPointerCapture(e.pointerId);});
+    canvas.addEventListener('pointermove',e=>{if(!dragging)return;view.lon-=(e.clientX-lastX)*.32;view.lat=Math.max(-80,Math.min(80,view.lat+(e.clientY-lastY)*.25));lastX=e.clientX;lastY=e.clientY;view.lastShadow=-1;});
+    canvas.addEventListener('pointerup',()=>{dragging=false;});
+    canvas.addEventListener('pointercancel',()=>{dragging=false;});
+    fallbackView=view;startFallbackAnimation(view);
     updateFallback({date:currentDate,mode,companies:null});
   }
 
