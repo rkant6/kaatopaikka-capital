@@ -298,23 +298,96 @@
     app.dirty=true;
   }
   function bindControls(s){
-    const c=s.canvas,info=s.overlay;
-    const start=(e)=>{s.drag=true;s.autoSpin=false;s.hover=null;
-      s.previous={x:e.clientX,y:e.clientY};s.velocity=0;
-      try{c.setPointerCapture(e.pointerId);}catch(_){}};
-    c.addEventListener('pointerdown',start);
-    c.addEventListener('pointermove',(e)=>{
-      if(!s.drag){const a=c.getBoundingClientRect();
-        s.hover={x:(e.clientX-a.left)*s.dpr,y:(e.clientY-a.top)*s.dpr};return;}
+    const c=s.canvas;
+    const zoomIn=document.getElementById('earth-zoom-in');
+    const zoomOut=document.getElementById('earth-zoom-out');
+    const zoomReset=document.getElementById('earth-zoom-reset');
+    const zoomLabel=document.getElementById('earth-zoom-level');
+    const ZMIN=.55,ZMAX=2.9;
+    const pointers=new Map();
+    let pinchDistance=null,pinchZoom=s.zoom;
+    const syncZoom=()=>{
+      if(zoomLabel)zoomLabel.textContent=Math.round(s.zoom*100)+'%';
+      if(zoomIn)zoomIn.disabled=s.zoom>=ZMAX-.001;
+      if(zoomOut)zoomOut.disabled=s.zoom<=ZMIN+.001;
+      if(zoomReset)zoomReset.disabled=Math.abs(s.zoom-1)<.001;
+    };
+    const changeZoom=(target)=>{
+      const next=clamp(target,ZMIN,ZMAX);
+      if(!Number.isFinite(next))return;
+      s.zoom=next;
+      s.radius=Math.min(s.w*.40,s.h*.44)*s.zoom;
+      // Canvas2D fallback must rerender its intermediate texture at the
+      // new resolution too; otherwise zoom appears blurred or unchanged.
+      if(s.cpu)s.cpu.resize();
+      s.dirty=true;
+      syncZoom();
+    };
+    if(zoomIn)zoomIn.addEventListener('click',()=>changeZoom(s.zoom*1.30));
+    if(zoomOut)zoomOut.addEventListener('click',()=>changeZoom(s.zoom/1.30));
+    if(zoomReset)zoomReset.addEventListener('click',()=>{
+      s.lat=56*RAD;s.lon=18*RAD;s.velocity=0;
+      changeZoom(1);
+    });
+    syncZoom();
+    const pointerId=e=>e.pointerId===undefined?0:e.pointerId;
+    const pinched=()=>{
+      const coords=[...pointers.values()];
+      return coords.length>=2?Math.hypot(coords[0].x-coords[1].x,coords[0].y-coords[1].y):null;
+    };
+    c.addEventListener('pointerdown',e=>{
+      const id=pointerId(e);
+      pointers.set(id,{x:e.clientX,y:e.clientY});
+      s.autoSpin=false;s.hover=null;s.velocity=0;
+      if(pointers.size>=2){
+        s.drag=false;pinchDistance=pinched();pinchZoom=s.zoom;
+        s.previous=null;
+      }else{
+        s.drag=true;s.previous={x:e.clientX,y:e.clientY};
+      }
+      try{c.setPointerCapture(id);}catch(_){}
+    });
+    c.addEventListener('pointermove',e=>{
+      const id=pointerId(e);
+      if(pointers.has(id))pointers.set(id,{x:e.clientX,y:e.clientY});
+      if(pointers.size>=2){
+        const distance=pinched();
+        if(distance&&pinchDistance){
+          changeZoom(pinchZoom*distance/pinchDistance);
+        }
+        return;
+      }
+      if(!s.drag||!s.previous){
+        const a=c.getBoundingClientRect();
+        s.hover={x:(e.clientX-a.left)*s.dpr,y:(e.clientY-a.top)*s.dpr};
+        return;
+      }
       const dx=e.clientX-s.previous.x,dy=e.clientY-s.previous.y;
       s.lon-=dx*.0076;s.lat=clamp(s.lat+dy*.0065,-1.43,1.43);
-      s.velocity=dx*.0005;s.previous={x:e.clientX,y:e.clientY};s.dirty=true;
+      s.velocity=dx*.0005;s.previous={x:e.clientX,y:e.clientY};
+      s.dirty=true;
     });
-    for(const type of ['pointerup','pointercancel'])
-      c.addEventListener(type,()=>{s.drag=false;s.previous=null;});
+    for(const type of ['pointerup','pointercancel','lostpointercapture']){
+      c.addEventListener(type,e=>{
+        pointers.delete(pointerId(e));
+        if(pointers.size<2){pinchDistance=null;pinchZoom=s.zoom;}
+        s.drag=false;s.previous=null;
+      });
+    }
     c.addEventListener('pointerleave',()=>{s.hover=null;});
-    c.addEventListener('wheel',e=>{e.preventDefault();s.zoom=clamp(s.zoom*(e.deltaY>0?.93:1.07),.7,1.48);
-      s.radius=Math.min(s.w*.40,s.h*.44)*s.zoom;s.dirty=true;},{passive:false});
+    c.addEventListener('wheel',e=>{
+      // Wheel and touchpad deltas have different units. Use an exponential
+      // factor so both work smoothly and the change is visually obvious.
+      e.preventDefault();
+      const px=e.deltaY*(e.deltaMode===1?16:e.deltaMode===2?500:1);
+      const scaled=clamp(px,-240,240);
+      changeZoom(s.zoom*Math.exp(-scaled*.0028));
+    },{passive:false});
+    c.addEventListener('keydown',e=>{
+      if(e.key==='+'||e.key==='='){e.preventDefault();changeZoom(s.zoom*1.3);}
+      if(e.key==='-'){e.preventDefault();changeZoom(s.zoom/1.3);}
+      if(e.key==='0'){e.preventDefault();changeZoom(1);}
+    });
   }
   function init(){
     const canvas=document.getElementById('home-earth-canvas');
@@ -329,7 +402,7 @@
       // only the canvas; keep the time machine and overlays intact.
       if(!s.canvas.getContext('2d')){
         const fresh=document.createElement('canvas');
-        fresh.id='home-earth-canvas';
+        fresh.id='home-earth-canvas';fresh.tabIndex=0;
         fresh.setAttribute('role','img');
         fresh.setAttribute('aria-label',s.canvas.getAttribute('aria-label')||'Interactive realistic Earth');
         s.canvas.replaceWith(fresh);
@@ -381,7 +454,7 @@
     }
     requestAnimationFrame(frame);
   }
-  window.KCHomeEarth=Object.freeze({setSnapshot:updateSnapshot,solar});
+  window.KCHomeEarth=Object.freeze({setSnapshot:updateSnapshot,solar,getViewState:()=>app?{zoom:app.zoom,radius:app.radius,lat:app.lat,lon:app.lon}:null});
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init,{once:true});
   else init();
 })();
