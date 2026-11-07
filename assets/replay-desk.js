@@ -1,0 +1,306 @@
+/* KAATOPAIKKA CAPITAL / 2024 POINT-IN-TIME RESEARCH REPLAY
+   Data-driven views only. Never infer a 2024 order, margin or return from the
+   current model or from placeholder CSV headers. */
+(() => {
+  'use strict';
+  const $=s=>document.querySelector(s);
+  const $$=s=>[...document.querySelectorAll(s)];
+  const escapeHTML=value=>String(value??'').replace(/[&<>"']/g,c=>({
+    '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'
+  }[c]));
+  const money=n=>Number.isFinite(+n)&&n!==null?
+    new Intl.NumberFormat('en-IE',{style:'currency',currency:'EUR',maximumFractionDigits:0}).format(+n):'—';
+  const percent=n=>Number.isFinite(+n)&&n!==null?
+    (+n>0?'+':'')+(100*+n).toFixed(2)+'%':'—';
+  const pct=n=>Number.isFinite(+n)&&n!==null?(100*+n).toFixed(1)+'%':'—';
+  const asUTC=day=>new Date(day+'T12:00:00Z');
+  const formatted=d=>{
+    const x=asUTC(d);
+    return Number.isNaN(+x)?String(d||'—'):
+      x.toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric',timeZone:'UTC'});
+  };
+  const ms=86400000,START=Date.UTC(2024,0,1);
+  const textByType={
+    trade:'MODEL TRADE',earnings:'EARNINGS RELEASE',rebalance:'REBALANCE',
+    dividend:'DIVIDEND',split:'CORPORATE ACTION',observed_drawdown:'PORTFOLIO RISK'
+  };
+  const state={data:null,status:null,day:null,filter:'all',lastError:null};
+  const safeLink=url=>typeof url==='string'&&url.startsWith('https://')?url:null;
+
+  function validData(data){
+    return data&&data.validated_inputs===true&&
+      data.is_investable_track_record===false&&
+      Array.isArray(data.history)&&data.history.length>1&&
+      Array.isArray(data.events)&&Array.isArray(data.decisions)&&
+      data.from>='2024-01-01'&&data.from<=data.through&&
+      data.history.every((p,i)=>p.date>=data.from&&p.date<=data.through&&
+        Number.isFinite(Number(p.nav))&&Number(p.nav)>0&&
+        (i===0||p.date>data.history[i-1].date));
+  }
+  function lowerBound(sorted,key){
+    let lo=0,hi=sorted.length;
+    while(lo<hi){const mid=(lo+hi)>>1;if(sorted[mid].date<=key)lo=mid+1;else hi=mid;}
+    return lo;
+  }
+  function lastAt(rows,day){
+    if(!rows?.length)return null;
+    return rows[lowerBound(rows,day)-1]||null;
+  }
+  function activeData(day){
+    const d=state.data;
+    if(!d||day<d.from||day>d.through)return null;
+    return lastAt(d.history,day);
+  }
+  function empty(title,detail,link){
+    return '<div class="replay-empty-state">'+
+      '<div class="replay-empty-mark" aria-hidden="true">◈</div>'+
+      '<strong>'+escapeHTML(title)+'</strong>'+
+      '<p>'+escapeHTML(detail)+'</p>'+
+      (link?'<a class="replay-source-link" target="_blank" rel="noopener noreferrer" href="'+escapeHTML(link)+'">Source documentation ↗</a>':'')+
+      '</div>';
+  }
+  function quoteDisclaimer(){
+    return 'Historical trade records are a research reconstruction using a fixed 2026 universe. '
+      +'They are hypothetical, subject to survivorship and strategy-selection bias, '
+      +'and never evidence of actual 2024 investment activity.';
+  }
+  function card(label,value,foot,accent){
+    return '<div class="stat"><div class="stat-label">'+escapeHTML(label)+'</div>'+
+      '<div class="stat-value '+(accent||'')+'">'+escapeHTML(value)+'</div>'+
+      '<div class="stat-note">'+escapeHTML(foot)+'</div></div>';
+  }
+  function drawChart(history,day,mini){
+    if(!history?.length)return '';
+    const W=920,H=mini?138:320;
+    const pad={l:mini?13:64,r:mini?18:28,t:mini?13:24,b:mini?10:46};
+    const x0=pad.l,x1=W-pad.r,y0=pad.t,y1=H-pad.b;
+    const yvalues=history.flatMap(h=>[+h.nav,+h.bench_nav||+h.nav]).filter(Number.isFinite);
+    let vmin=Math.min(...yvalues),vmax=Math.max(...yvalues);
+    if(vmax===vmin){vmax*=1.025;vmin*=.975;}
+    const diff=Math.max(vmax-vmin,1);vmin-=diff*.08;vmax+=diff*.08;
+    const x=i=>x0+i*(x1-x0)/Math.max(1,history.length-1);
+    const y=v=>y1-(+v-vmin)/(vmax-vmin)*(y1-y0);
+    const curve=(field)=>history.map((p,i)=>(i?'L':'M')+x(i).toFixed(2)+','+y(p[field]??p.nav).toFixed(2)).join(' ');
+    const chosen=lastAt(history,day);
+    const currentIndex=chosen?history.indexOf(chosen):0;
+    const currentX=x(currentIndex);
+    let svg='<svg class="replay-equity-svg" viewBox="0 0 '+W+' '+H+'" role="img" aria-label="Historical model NAV and equal-weight benchmark through '+escapeHTML(history.at(-1).date)+'">';
+    svg+='<defs><linearGradient id="'+(mini?'mini':'backtest')+'-replay-grad" x1="0" y1="0" x2="0" y2="1">'+
+      '<stop offset="0%" stop-color="#ffa936" stop-opacity=".21"/>'+
+      '<stop offset="100%" stop-color="#ffa936" stop-opacity="0"/></linearGradient></defs>';
+    if(!mini){
+      for(let k=0;k<5;k++){
+        const level=vmin+(vmax-vmin)*k/4,yy=y(level);
+        svg+='<line x1="'+x0+'" y1="'+yy+'" x2="'+x1+'" y2="'+yy+'" stroke="#293641" stroke-width="1" stroke-dasharray="3 5"/>';
+        svg+='<text x="'+(x0-10)+'" y="'+(yy+4)+'" fill="#8396a5" font-size="10" font-family="IBM Plex Mono" text-anchor="end">€'+(level/1000).toFixed(1)+'k</text>';
+      }
+      [0,Math.floor((history.length-1)/2),history.length-1].forEach(i=>{
+        svg+='<text x="'+x(i)+'" y="'+(H-12)+'" fill="#8195a4" text-anchor="middle" font-size="10" font-family="IBM Plex Mono">'+
+          escapeHTML(history[i].date.slice(0,7))+'</text>';
+      });
+    }
+    const start=x(0)+','+y1,final=x(history.length-1)+','+y1;
+    svg+='<path d="M'+start+' '+curve('nav')+' L'+final+' Z" fill="url(#'+(mini?'mini':'backtest')+'-replay-grad)"/>';
+    svg+='<path d="'+curve('bench_nav')+'" fill="none" stroke="#7497bb" stroke-width="'+(mini?1.8:2.5)+'" opacity=".95"/>';
+    svg+='<path d="'+curve('nav')+'" fill="none" stroke="#ffad38" stroke-width="'+(mini?2.8:3.7)+'" stroke-linecap="round" stroke-linejoin="round"/>';
+    svg+='<line x1="'+currentX+'" y1="'+y0+'" x2="'+currentX+'" y2="'+y1+'" stroke="#ffe5ae" opacity=".63" stroke-dasharray="5 4"/>';
+    if(chosen){
+      svg+='<circle cx="'+currentX+'" cy="'+y(chosen.nav)+'" r="'+(mini?4:6)+'" fill="#ffbe4c" stroke="#121921" stroke-width="2"/>';
+      if(!mini)svg+='<text x="'+Math.min(currentX+10,x1-85)+'" y="'+Math.max(y(chosen.nav)-14,y0+10)+'" fill="#ffe0a1" font-size="12" font-family="IBM Plex Mono">'+
+        escapeHTML(money(chosen.nav))+'</text>';
+    }
+    svg+='</svg>';
+    if(!mini)svg+='<div class="chart-legend"><span><i class="legend-line" style="background:#ffad38"></i>Margin-reversion model</span>'+
+      '<span><i class="legend-line" style="background:#7497bb"></i>Equal-weight buy-and-hold</span>'+
+      '<span>Cursor: '+escapeHTML(chosen?.date||'—')+'</span></div>';
+    return svg;
+  }
+  function classOfEvent(e){
+    return e.type==='observed_drawdown'?'risk':
+      e.type==='trade'?'trade':e.type==='earnings'?'earnings':
+      e.type==='rebalance'?'rebalance':'corporate';
+  }
+  function iconFor(e){
+    if(e.type==='observed_drawdown')return '☄';
+    if(e.type==='trade')return e.side==='SELL'?'↘':'↗';
+    if(e.type==='earnings')return '▤';
+    if(e.type==='dividend')return '€';
+    if(e.type==='split')return '≋';
+    return '◎';
+  }
+  function eventRow(e,compact=false){
+    const url=safeLink(e.source_url);
+    const kind=classOfEvent(e);
+    return '<article class="replay-event replay-event-'+kind+'">'+
+      '<span class="replay-event-icon" aria-hidden="true">'+iconFor(e)+'</span>'+
+      '<div class="replay-event-body">'+
+      '<div class="replay-event-caption"><b>'+escapeHTML(textByType[e.type]||e.type.toUpperCase())+'</b> · '+escapeHTML(formatted(e.date))+'</div>'+
+      '<div class="replay-event-text">'+escapeHTML(e.description||e.company||'Documented observation')+'</div>'+
+      (compact?'':(url?'<a class="replay-source-link" href="'+escapeHTML(url)+'" target="_blank" rel="noopener noreferrer">Check source ↗</a>':
+        '<small class="replay-source-muted">Calculated from the dated backtest</small>'))+
+      '</div></article>';
+  }
+  function showPanel(day){
+    const row=activeData(day),d=state.data;
+    const v=Boolean(row),startText=day<'2024-01-02'?'Before the first market session':'No validated trading records';
+    const flag=$('#replay-validation');
+    if(flag){flag.textContent=d?'SOURCE-DATED · HYPOTHETICAL':'SOURCE DATA REQUIRED';flag.classList.toggle('is-ready',!!d);}
+    if($('#replay-asof')){
+      const rows=state.status?.input_rows||{};
+      $('#replay-asof').textContent=d?'Research replay through '+formatted(d.through)+' · Fixed-universe selection bias':
+        'EVIDENCE COVERAGE · '+(rows.filings||0)+' filings / '+(rows.annual_margins||0)+' annual margins / '+(rows.prices||0)+' price rows';
+    }
+    const mini=$('#replay-mini-chart');
+    if(mini)mini.innerHTML=d?drawChart(d.history,day,true):
+      empty('2024 return series not yet verified',
+        'The strategy cannot report historical buys or P&L until original Q1–Q4 releases and dated prices have been audited.',
+        'https://github.com/rkant6/kaatopaikka-capital/tree/main/historical_data');
+    const cards=$('#backtest-stats');
+    if(cards)cards.innerHTML=[
+      card('Strategy NAV',v?money(row.nav):'—',v?'Historical research through '+formatted(row.date):'2024–present evidence pending'),
+      card('Strategy return',v?percent(row.return):'—',v?'Hypothetical · after modeled costs':'No invented 2024 performance',v?(row.return<0?'negative':'positive'):''),
+      card('Equal-weight benchmark',v?percent(row.bench_return):'—',v?'Dividends and entry costs included':'Requires same source-dated prices'),
+      card('Active positions',v?String(row.positions?.length??0):'—',v?'At '+formatted(row.date):'Trading history cannot be inferred')
+    ].join('');
+    if($('#backtest-status'))$('#backtest-status').textContent=d?'RESEARCH BACKTEST · NOT LIVE':'AWAITING ORIGINAL FILINGS';
+    const mainChart=$('#backtest-chart');
+    if(mainChart)mainChart.innerHTML=d?drawChart(d.history,day,false):
+      empty('No authenticated 2024 equity curve',
+        'The model will only show actual source-dated historical simulations after each Nordic filing, quote, FX series and corporate action is supplied.',
+        'https://github.com/rkant6/kaatopaikka-capital/tree/main/historical_data');
+    if($('#backtest-chart-caption'))$('#backtest-chart-caption').textContent=d?
+      'Fixed current universe · 0.15% modeled transaction costs · retrospective research only. '+quoteDisclaimer():
+      'Data-gated: 2026 paper NAV is kept separate and must not be relabeled as 2024 returns.';
+    const holdings=$('#backtest-holdings');
+    if(holdings)holdings.innerHTML=v?(row.positions?.length?
+      row.positions.slice().sort((a,b)=>b.weight-a.weight).map(p=>
+        '<div class="backtest-position"><div><strong>'+escapeHTML(p.name)+'</strong><small>'+percent(p.weight)+' weight · '+money(p.value)+'</small></div>'+
+        '<span class="backtest-weight-bar"><i style="width:'+Math.min(100,Math.max(0,p.weight*100))+'%"></i></span></div>').join(''):
+      empty('Cash / awaiting rebalance','The first eligible common Nordic trading session has not yet produced a position.')):
+      empty('Holdings not verified','No contemporary 2024 securities or weights are assumed from the 2026 model.');
+    const snap=d?lastAt(d.snapshots||[],day):null;
+    const holder=$('#backtest-snapshot');
+    if(holder)holder.innerHTML=snap?
+      '<div class="replay-audit-caption">LAST MODEL DECISION · '+escapeHTML(formatted(snap.date))+
+      '<br>Signals used prior close: '+escapeHTML(snap.signal_asof)+'</div>'+
+      Object.entries(snap.evidence||{}).slice(0,6).map(([name,ev])=>
+        '<div class="replay-evidence"><b>'+escapeHTML(name)+'</b> <span>Filing published '+escapeHTML(ev.published_on)+'</span>'+
+        (safeLink(ev.source_url)?'<a href="'+escapeHTML(ev.source_url)+'" rel="noopener noreferrer" target="_blank">↗</a>':'')+'</div>').join(''):
+      '<p class="replay-audit-caption">Every eventual decision links to the report that was public before the prior-session signal. No hindsight financial updates are permitted.</p>';
+    const allEvents=d?d.events.filter(x=>x.date<=day):[];
+    const filter=state.filter;
+    const filtered=allEvents.filter(x=>filter==='all'||(filter==='risk'?x.type==='observed_drawdown':
+      filter==='trade'?x.type==='trade':x.type==='earnings'));
+    const eventList=$('#backtest-events');
+    if(eventList)eventList.innerHTML=filtered.length?
+      filtered.slice(-26).reverse().map(x=>eventRow(x,false)).join(''):
+      empty('No source-verified events at this point','Choose a later date or provide original filing and price inputs.');
+    const blotter=$('#backtest-orders');
+    if(blotter){
+      const orders=d?d.decisions.filter(dec=>dec.date<=day).flatMap(dec=>dec.orders.map(o=>({...o,date:dec.date}))).slice(-40).reverse():[];
+      blotter.innerHTML=orders.length?orders.map(o=>
+        '<tr><td class="mono">'+escapeHTML(o.date)+'</td><td><span class="replay-order-side '+(o.side==='BUY'?'buy':'sell')+'">'+escapeHTML(o.side)+'</span><br>'+escapeHTML(o.company)+'</td>'+
+        '<td class="mono">'+escapeHTML(money(o.eur))+'</td><td>'+
+        (safeLink(o.source_url)?'<a class="replay-source-link" href="'+escapeHTML(o.source_url)+'" target="_blank" rel="noopener noreferrer">Filing '+escapeHTML(o.report_published_on)+' ↗</a>':'No source')+
+        '</td></tr>').join(''):'<tr><td colspan="4" class="replay-no-orders">No authenticated historical buys or sells to display.</td></tr>';
+    }
+    const coverage=$('#backtest-coverage');
+    if(coverage){
+      const rows=state.status?.input_rows||{};
+      const review=[
+        ['Quarterly filings / TTM fundamentals',rows.filings||0,'Published dates, EBIT, shares, debt and original issuer links'],
+        ['Annual operating-margin observations',rows.annual_margins||0,'Historical values and original release dates'],
+        ['Daily close / FX / corporate actions',rows.prices||0,'Source-dated quotes, splits and dividends'],
+        ['Model execution and portfolio entries',d?.decisions?.length||0,'Only generated after the complete input audit']
+      ];
+      coverage.innerHTML='<div class="replay-coverage-grid">'+review.map(r=>
+        '<div class="replay-coverage-item"><span>'+escapeHTML(r[0])+'</span><strong>'+escapeHTML(String(r[1]))+' rows</strong><small>'+escapeHTML(r[2])+'</small></div>').join('')+'</div>'+
+        '<div class="replay-coverage-notice">'+
+        '<strong>'+(d?'SOURCE-DATED REPLAY AVAILABLE':'HISTORICAL RETURNS WITHHELD')+'</strong><p>'+
+        escapeHTML(d?quoteDisclaimer():(state.status?.reason||
+          'The original 2024–2026 filings and complete 30-name price histories are not in the repository. A 2026 snapshot cannot be reused as 2024 information.'))+'</p>'+
+        '<p>Stock market data displayed on this site are end-of-day and may be delayed. The page automatically checks for newly published data but does not claim a real-time exchange feed.</p></div>';
+    }
+    const replayStats=$('#replay-live-stats');
+    if(replayStats)replayStats.innerHTML=v?
+      '<span><small>SIMULATED NAV</small><b>'+escapeHTML(money(row.nav))+'</b></span>'+
+      '<span><small>SINCE 2024</small><b class="'+(row.return<0?'negative':'positive')+'">'+escapeHTML(percent(row.return))+'</b></span>'+
+      '<span><small>BENCHMARK</small><b>'+escapeHTML(percent(row.bench_return))+'</b></span>':
+      '<span><small>2024 NAV</small><b>—</b></span><span><small>HISTORICAL ORDERS</small><b>NOT VERIFIED</b></span>';
+    const timeEvents=$('#time-events');
+    if(timeEvents){
+      const recent=allEvents.filter(x=>x.date>=new Date(+asUTC(day)-10*ms).toISOString().slice(0,10));
+      timeEvents.innerHTML=recent.length?recent.slice(-3).reverse().map(e=>eventRow(e,true)).join(''):
+        '<div class="replay-no-events">'+escapeHTML(d?'No source-dated event in the preceding 10 days.':
+        'No verified 2024–2026 trades or earnings have been loaded. The Earth and timeline still animate, but historical returns cannot be inferred.')+'</div>';
+    }
+    const factTitle=$('#time-summary-title'),factText=$('#time-summary');
+    if(factTitle&&factText){
+      if(v){
+        factTitle.textContent=money(row.nav)+'  ·  '+percent(row.return);
+        factText.textContent='Research reconstruction as of '+formatted(row.date)+'. Last common-market rebalance followed published filings and prior close signals. Fixed 2026-selected universe.';
+      }else if(d){
+        factTitle.textContent=startText;
+        factText.textContent='Validated backtest coverage: '+formatted(d.from)+' to '+formatted(d.through)+'. Outside that window, no returns are extrapolated.';
+      }else{
+        factTitle.textContent='Historical strategy performance awaits evidence';
+        factText.textContent='Original source-dated reports and market history are missing. The live paper portfolio started in 2026; it cannot be backdated.';
+      }
+    }
+    const next=$('#replay-next-event');
+    if(next){
+      const future=d?.events?.find(e=>e.date>day);
+      next.disabled=!future;
+      next.title=future?'Next source-dated event: '+future.date:'No verified future event available';
+    }
+  }
+
+  async function loadJSON(path){
+    try{
+      const r=await fetch(path+'?replay='+Date.now(),{cache:'no-store'});
+      if(!r.ok)return null;
+      return await r.json();
+    }catch(e){return null;}
+  }
+  async function sync(initial){
+    const [d,status]=await Promise.all([loadJSON('historical-backtest.json'),loadJSON('historical-status.json')]);
+    const next=validData(d)?d:null;
+    const changed=JSON.stringify([state.data?.last_rebuilt_utc,state.status?.generated_utc])!==JSON.stringify(
+      [next?.last_rebuilt_utc,status?.generated_utc]);
+    state.data=next;state.status=status||null;
+    if(initial||changed)showPanel(state.day||new Date().toISOString().slice(0,10));
+  }
+  function setup(){
+    if(!$('#replay-mini-chart'))return;
+    window.addEventListener('kc:timeline',e=>{
+      state.day=e.detail?.iso||state.day;
+      showPanel(state.day);
+    });
+    $$('.event-filter').forEach(button=>button.addEventListener('click',()=>{
+      state.filter=button.dataset.eventKind;
+      $$('.event-filter').forEach(b=>b.classList.toggle('is-active',b===button));
+      showPanel(state.day||new Date().toISOString().slice(0,10));
+    }));
+    $('#replay-next-event')?.addEventListener('click',()=>{
+      const next=state.data?.events?.find(e=>e.date>(state.day||'2024-01-01'));
+      if(!next)return;
+      const slider=$('#time-date-range');
+      if(!slider)return;
+      slider.value=Math.min(+slider.max,Math.max(0,Math.round(
+        (+asUTC(next.date)-START)/ms)));
+      slider.dispatchEvent(new Event('input',{bubbles:true}));
+    });
+    $('#backtest-jump')?.addEventListener('click',()=>{
+      $('[data-page="overview"]')?.click();
+      document.querySelector('.planet-desk')?.scrollIntoView({behavior:'smooth',block:'center'});
+    });
+    state.day=new Date().toISOString().slice(0,10);
+    showPanel(state.day);
+    sync(true);
+    // Poll the published static files; these are END-OF-DAY facts, not a
+    // streaming trade feed, and a stale date must never be labeled "live".
+    setInterval(()=>{if(!document.hidden)sync(false);},90000);
+  }
+  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',setup,{once:true});
+  else setup();
+})();
