@@ -1,0 +1,33 @@
+/* Home globe/time machine: low-overhead layout, no decorative videos. */
+.planet-desk {margin:0 0 24px;overflow:hidden;background:#0a0f14}
+.planet-head {display:flex;justify-content:space-between;align-items:center;gap:22px;padding:23px 26px 22px;border-bottom:1px solid #27323d}
+.planet-head h2 {margin:4px 0 6px;font:600 clamp(20px,2.2vw,30px)/1.2 var(--display);letter-spacing:-.04em}
+.planet-head p {margin:0;max-width:690px;font-size:12px;line-height:1.6;color:#b3bec9}
+.planet-live {font:600 10px var(--mono);white-space:nowrap;letter-spacing:.035em;border:1px solid #59604f;border-radius:4px;color:#ffd38f;background:#352719;padding:9px 11px}
+.planet-live.verified {border-color:#3c7663;color:#91e8c4;background:#15352a}
+.planet-grid {display:grid;grid-template-columns:minmax(0,1fr) minmax(275px,315px);min-height:495px}
+.planet-canvas {position:relative;min-width:0;overflow:hidden;background:radial-gradient(ellipse at 46% 45%,#1b2630 0%,#0b1119 48%,#06090d 90%);border-right:1px solid #28323b}
+.planet-canvas iframe {border:0;width:100%;height:100%;min-height:495px;display:block;background:transparent}
+.planet-notation {position:absolute;top:17px;left:18px;z-index:2;padding:7px 9px;color:#a9b6c0;background:#071015ab;border:1px solid #39414a81;border-radius:3px;pointer-events:none;font:600 9px var(--mono);letter-spacing:.065em}
+.planet-notation span {padding:0 4px;color:#ffad32}
+.time-desk {min-width:0;padding:24px 20px 15px;background:linear-gradient(165deg,#151b22 0%,#0b1016 80%);display:flex;flex-direction:column;gap:0}
+.time-desk-top {display:flex;justify-content:space-between;align-items:center;gap:9px}
+.time-badge {font:500 9px var(--mono);color:#b5c2cd;background:#202b35;border:1px solid #344552;border-radius:3px;padding:4px 6px;white-space:nowrap}
+.time-date {font:600 30px/1.15 var(--display);letter-spacing:-.045em;margin:18px 0 23px;color:#ffcf80;font-variant-numeric:tabular-nums}
+.time-label {font:600 10px var(--mono);color:#c4ccd5;letter-spacing:.03em}
+.time-desk input[type=range] {width:100%;margin:13px 0 4px;height:5px;accent-color:#ffae34;cursor:pointer}
+.time-ends {display:flex;justify-content:space-between;gap:10px;color:#7f90a1;font:500 9px var(--mono);letter-spacing:.03em;margin-bottom:20px}
+.time-actions {display:flex;gap:8px;flex-wrap:wrap;margin-bottom:19px}
+.time-actions .button {padding:10px 12px;font:700 10px var(--mono);white-space:normal;flex:1}
+.time-actions #time-play {flex:1.5;min-width:128px}
+.time-fact {padding:14px 12px;display:flex;gap:11px;align-items:flex-start;background:#1b242c;border:1px solid #364450;border-left:2px solid #ffad32;border-radius:4px;min-height:101px}
+.time-fact-icon {font-size:19px;color:#ffba4a}
+.time-fact strong {display:block;color:#f0f1ef;font:600 12px/1.4 var(--font)}
+.time-fact p {margin:7px 0 0;font-size:11px;line-height:1.6;color:#b1bfcd}
+.time-event-list {min-height:30px;padding:11px 0 0;color:#a3aebb;font:500 10px/1.5 var(--mono)}
+.time-event {display:flex;align-items:flex-start;gap:7px;margin-bottom:7px;padding:6px 8px;border-radius:3px;background:#302029;color:#ffaab0}
+.time-event .meteor-symbol {font-size:12px}
+.time-footnote {margin-top:auto;padding-top:12px;color:#728292;font:400 10px/1.65 var(--font);border-top:1px solid #25313a}
+@media(max-width:1260px){.planet-grid{grid-template-columns:minmax(0,1fr) minmax(270px,290px)}.planet-head{padding:20px 21px}.time-desk{padding:21px 15px 14px}}
+@media(max-width:980px){.planet-grid{grid-template-columns:1fr}.planet-canvas{border-right:none;border-bottom:1px solid #28323b}.planet-canvas iframe{height:500px;min-height:500px}.time-desk{display:grid;grid-template-columns:1fr 1fr;column-gap:18px;padding:19px 22px}.time-desk-top,.time-date,.time-label,.time-desk input,.time-ends,.time-actions{grid-column:1}.time-fact,.time-event-list,.time-footnote{grid-column:2}.time-desk-top{grid-column:1/-1;margin-bottom:12px}.time-date{margin:0 0 17px}.time-fact{grid-row:2/6}.time-event-list{grid-row:6}.time-footnote{grid-column:1/-1;margin-top:10px}}
+@media(max-width:620px){.planet-head{display:block;padding:18px}.planet-head h2{font-size:23px}.planet-head p{font-size:11px}.planet-live{display:inline-flex;margin-top:12px}.planet-canvas iframe{height:395px;min-height:395px}.planet-notation{font-size:8px;top:10px;left:10px}.time-desk{display:flex;padding:20px 18px}.time-date{margin:14px 0 21px;font-size:27px}.time-fact{min-height:0}.time-footnote{margin-top:10px}}
