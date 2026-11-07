@@ -141,7 +141,8 @@
   }
   function sendGlobeTime(iso,meteor=null) {
     const current=iso>=state.data?.meta?.priceTo;
-    const snap=!current?lastReplaySnapshot(iso):null;
+    const verified=state.history?.validated_inputs===true && Array.isArray(state.history.history);
+    const snap=verified&&!current?lastReplaySnapshot(iso):null;
     const packet={type:'KC_GLOBE_TIME',date:iso,mode:current?'current':snap?'verified':'unverified',
       companies:current?null:snap?.companies||null,event:meteor};
     // Home canvas is the primary renderer: it remains visible even when
