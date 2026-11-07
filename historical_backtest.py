@@ -39,7 +39,8 @@ SCHEMAS = {
     "filings": ("company", "period_end", "published_on", "revenue_ttm_m", "ebit_ttm_m",
                 "net_debt_m", "shares_m", "beta", "tax_rate", "structural_flag", "source_url"),
     "annual_margins": ("company", "fiscal_year", "period_end", "published_on", "operating_margin", "source_url"),
-    "prices": ("company", "date", "close", "dividend", "split_factor", "fx_to_eur", "source_url"),
+    "prices": ("company", "date", "close", "dividend", "split_factor", "fx_to_eur",
+               "reporting_fx_to_eur", "price_currency", "source_url", "fx_source_url"),
 }
 
 
@@ -106,10 +107,16 @@ def read_inputs(directory: Path) -> dict:
             raise CoverageError(f"Annual margin published before period end for {r['company']}")
     for r in tables["prices"]:
         _day(r["date"], "price date")
-        for col in ("close", "dividend", "split_factor", "fx_to_eur"):
-            _number(r, col)
-        if min(_number(r,"close"),_number(r,"split_factor"),_number(r,"fx_to_eur")) <= 0 or _number(r,"dividend") < 0:
+        for col in ("close","dividend","split_factor","fx_to_eur","reporting_fx_to_eur"):
+            _number(r,col)
+        if min(_number(r,"close"),_number(r,"split_factor"),
+               _number(r,"fx_to_eur"),_number(r,"reporting_fx_to_eur"))<=0 or _number(r,"dividend")<0:
             raise CoverageError(f"Invalid price/FX/split for {r['company']}")
+        base=next(c for c in model.COMPANIES if c["name"]==r["company"])
+        if r["price_currency"]!=base["trd"]:
+            raise CoverageError(f"Incorrect price currency for {r['company']}; expected {base['trd']}")
+        if not r["fx_source_url"].startswith("https://"):
+            raise CoverageError(f"Unverifiable FX source for {r['company']}")
     for table, key in (("filings","period_end"),("annual_margins","fiscal_year"),("prices","date")):
         seen=set()
         for r in tables[table]:
