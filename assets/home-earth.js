@@ -41,7 +41,7 @@
     return {canvas,overlay,overlayCtx:overlay.getContext('2d'),mode:null,
       lon:18*RAD,lat:56*RAD,zoom:1,drag:false,autoSpin:!reduce,reduced:reduce,
       previous:null,velocity:0,hover:null,companies:[],textures:[],
-      started:performance.now(),last:performance.now(),lastDraw:0,meteorAt:0,
+      started:performance.now(),last:performance.now(),lastDraw:0,meteorAt:0,activeEvents:[],
       w:0,h:0,cx:0,cy:0,radius:0,dpr:1,destroyed:false};
   }
   function geometry(s){
@@ -279,6 +279,28 @@
       ctx.strokeStyle='rgba(255,186,83,.65)';ctx.strokeRect(tx,ty,width,25*s.dpr);
       ctx.fillStyle='#e8edf5';ctx.fillText(name,tx+10*s.dpr,ty+17*s.dpr);
     }
+    // Audited replay events pulse directly over the issuing company's location.
+    // Events only arrive if the historical source-date gate passed.
+    if(packet.mode==='verified'&&s.activeEvents.length){
+      s.activeEvents=s.activeEvents.filter(e=>now-e.started<1900);
+      const visible=s.activeEvents.filter(e=>e.company);
+      for(const e of visible.slice(-5)){
+        const company=s.companies.find(c=>c.name===e.company);
+        if(!company)continue;
+        const p=project(company.lat,company.lon,s);
+        if(!p.visible)continue;
+        const t=clamp((now-e.started)/1900,0,1);
+        const risk=e.type==='observed_drawdown'||e.side==='SELL';
+        const color=risk?'252,117,121':'255,192,87';
+        ctx.lineWidth=(1.7+1.8*(1-t))*s.dpr;
+        ctx.strokeStyle='rgba('+color+','+(.8*(1-t)).toFixed(3)+')';
+        ctx.beginPath();ctx.arc(p.x,p.y,(5+35*t)*s.dpr,0,TAU);ctx.stroke();
+        ctx.font='700 '+(11*s.dpr)+'px IBM Plex Mono,monospace';
+        ctx.fillStyle='rgba('+color+','+(1-t*.7).toFixed(3)+')';
+        const label=(e.type==='earnings'?'Q REPORT':(e.side||e.type).toUpperCase())+' · '+company.name;
+        ctx.fillText(label,clamp(p.x+9*s.dpr,8*s.dpr,w-240*s.dpr),p.y-18*s.dpr);
+      }
+    }
     if(s.meteorAt&&packet.mode==='verified') {
       const k=(now-s.meteorAt)/1000;
       if(k>1)s.meteorAt=0;
@@ -295,6 +317,13 @@
     packet={...packet,...p};
     if(!app)return;
     if(p.event?.type==='observed_drawdown'&&packet.mode==='verified')app.meteorAt=performance.now();
+    if(packet.mode==='verified'&&Array.isArray(p.events)&&p.events.length){
+      const now=performance.now();
+      app.activeEvents.push(...p.events.filter(e=>
+        e && typeof e.company==='string' && (e.type==='trade'||e.type==='earnings'))
+        .slice(-6).map(e=>({...e,started:now})));
+      app.activeEvents=app.activeEvents.slice(-12);
+    }else if(packet.mode!=='verified')app.activeEvents=[];
     app.dirty=true;
   }
   function bindControls(s){

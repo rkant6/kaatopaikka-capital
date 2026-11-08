@@ -24,7 +24,8 @@
     trade:'MODEL TRADE',earnings:'EARNINGS RELEASE',rebalance:'REBALANCE',
     dividend:'DIVIDEND',split:'CORPORATE ACTION',observed_drawdown:'PORTFOLIO RISK'
   };
-  const state={data:null,status:null,day:null,filter:'all',lastError:null};
+  const state={data:null,status:null,day:null,filter:'all',lastError:null,renderAt:0,
+    eventFlashTimer:null,lastNarratedKey:null,playMode:false};
   const safeLink=url=>typeof url==='string'&&url.startsWith('https://')?url:null;
 
   function validData(data){
@@ -71,20 +72,24 @@
   }
   function drawChart(history,day,mini){
     if(!history?.length)return '';
+    // A 2024 playback frame must NEVER draw the future equity curve.
+    // Only points dated on or before the selected frame are visible.
+    const visible=history.slice(0,lowerBound(history,day));
+    if(!visible.length)return empty('Strategy not yet started','No recorded simulated trade or NAV exists at this date.');
     const W=920,H=mini?138:320;
     const pad={l:mini?13:64,r:mini?18:28,t:mini?13:24,b:mini?10:46};
     const x0=pad.l,x1=W-pad.r,y0=pad.t,y1=H-pad.b;
-    const yvalues=history.flatMap(h=>[+h.nav,+h.bench_nav||+h.nav]).filter(Number.isFinite);
+    const yvalues=visible.flatMap(h=>[+h.nav,+h.bench_nav||+h.nav]).filter(Number.isFinite);
     let vmin=Math.min(...yvalues),vmax=Math.max(...yvalues);
     if(vmax===vmin){vmax*=1.025;vmin*=.975;}
     const diff=Math.max(vmax-vmin,1);vmin-=diff*.08;vmax+=diff*.08;
     const x=i=>x0+i*(x1-x0)/Math.max(1,history.length-1);
     const y=v=>y1-(+v-vmin)/(vmax-vmin)*(y1-y0);
-    const curve=(field)=>history.map((p,i)=>(i?'L':'M')+x(i).toFixed(2)+','+y(p[field]??p.nav).toFixed(2)).join(' ');
-    const chosen=lastAt(history,day);
-    const currentIndex=chosen?history.indexOf(chosen):0;
+    const curve=(field)=>visible.map((p,i)=>(i?'L':'M')+x(i).toFixed(2)+','+y(p[field]??p.nav).toFixed(2)).join(' ');
+    const chosen=visible.at(-1);
+    const currentIndex=visible.length-1;
     const currentX=x(currentIndex);
-    let svg='<svg class="replay-equity-svg" viewBox="0 0 '+W+' '+H+'" role="img" aria-label="Historical model NAV and equal-weight benchmark through '+escapeHTML(history.at(-1).date)+'">';
+    let svg='<svg class="replay-equity-svg" viewBox="0 0 '+W+' '+H+'" role="img" aria-label="Historical model NAV and equal-weight benchmark through '+escapeHTML(chosen?.date||day)+'">';
     svg+='<defs><linearGradient id="'+(mini?'mini':'backtest')+'-replay-grad" x1="0" y1="0" x2="0" y2="1">'+
       '<stop offset="0%" stop-color="#ffa936" stop-opacity=".21"/>'+
       '<stop offset="100%" stop-color="#ffa936" stop-opacity="0"/></linearGradient></defs>';
@@ -99,7 +104,7 @@
           escapeHTML(history[i].date.slice(0,7))+'</text>';
       });
     }
-    const start=x(0)+','+y1,final=x(history.length-1)+','+y1;
+    const start=x(0)+','+y1,final=currentX+','+y1;
     svg+='<path d="M'+start+' '+curve('nav')+' L'+final+' Z" fill="url(#'+(mini?'mini':'backtest')+'-replay-grad)"/>';
     svg+='<path d="'+curve('bench_nav')+'" fill="none" stroke="#7497bb" stroke-width="'+(mini?1.8:2.5)+'" opacity=".95"/>';
     svg+='<path d="'+curve('nav')+'" fill="none" stroke="#ffad38" stroke-width="'+(mini?2.8:3.7)+'" stroke-linecap="round" stroke-linejoin="round"/>';
@@ -114,6 +119,35 @@
       '<span><i class="legend-line" style="background:#7497bb"></i>Equal-weight buy-and-hold</span>'+
       '<span>Cursor: '+escapeHTML(chosen?.date||'—')+'</span></div>';
     return svg;
+  }
+  function annualTable(history,through){
+    if(!history?.length)return empty('Annual return table pending',
+      'The 2024–present model history cannot be calculated without dated Q1–Q4 original releases and prices.');
+    const years=[...new Set(history.map(x=>x.date.slice(0,4)))].sort();
+    const rows=[];
+    let priorNav=10000,priorBench=10000;
+    for(const year of years){
+      const entries=history.filter(h=>h.date.startsWith(year));
+      if(!entries.length)continue;
+      // Annual returns use the last recorded close of the prior year,
+      // or the actual EUR 10,000 notional starting capital for FY2024.
+      const last=entries.at(-1);
+      const ret=last.nav/priorNav-1,bench=last.bench_nav/priorBench-1;
+      let peak=priorNav,maxDD=0;
+      for(const p of entries){peak=Math.max(peak,p.nav);maxDD=Math.min(maxDD,p.nav/peak-1);}
+      const complete=year<through.slice(0,4);
+      rows.push('<tr><td><b>'+escapeHTML(year)+'</b> '+(complete?'':'<small>YTD</small>')+'</td>'+
+        '<td class="'+(ret<0?'negative':'positive')+'">'+escapeHTML(percent(ret))+'</td>'+
+        '<td class="'+(bench<0?'negative':'positive')+'">'+escapeHTML(percent(bench))+'</td>'+
+        '<td class="'+(ret-bench<0?'negative':'positive')+'">'+escapeHTML(percent(ret-bench))+'</td>'+
+        '<td class="negative">'+escapeHTML(percent(maxDD))+'</td>'+
+        '<td>'+escapeHTML(money(last.nav))+'</td></tr>');
+      priorNav=last.nav;priorBench=last.bench_nav;
+    }
+    return '<div class="table-scroll"><table class="data-table replay-annual-table">'+
+      '<thead><tr><th>YEAR</th><th>STRATEGY</th><th>BENCHMARK</th><th>EXCESS</th><th>MAX DD</th><th>YEAR-END NAV</th></tr></thead>'+
+      '<tbody>'+rows.join('')+'</tbody></table></div>'+
+      '<div class="backtest-annual-notice">Retrospective research on a fixed, survivorship-biased universe. Returns include modeled trade costs, cash dividends and split accounting; no live investment performance is implied.</div>';
   }
   function classOfEvent(e){
     return e.type==='observed_drawdown'?'risk':
@@ -139,6 +173,81 @@
       (compact?'':(url?'<a class="replay-source-link" href="'+escapeHTML(url)+'" target="_blank" rel="noopener noreferrer">Check source ↗</a>':
         '<small class="replay-source-muted">Calculated from the dated backtest</small>'))+
       '</div></article>';
+  }
+  // Event director: only source-dated events from an approved backtest may
+  // ever appear as BUY, SELL, EARNINGS or LOSS on the moving globe.
+  function updatePlayhead(day,playing){
+    const track=$('#replay-progress-fill'),now=$('#replay-now-playing');
+    const total=Math.max(1,Date.now()-START),progress=Math.max(0,Math.min(1,(+asUTC(day)-START)/total));
+    if(track)track.style.transform='scaleX('+progress.toFixed(5)+')';
+    if(!now)return;
+    const eventMode=state.data&&day>=state.data.from&&day<=state.data.through;
+    now.classList.toggle('is-playing',Boolean(playing));
+    const caption=eventMode
+      ?'RESEARCH BACKTEST · '+formatted(day)+' · SOURCE-DATED'
+      :playing?'VISUAL TIME TRAVEL · NO VERIFIED 2024 MODEL ORDERS'
+        :'SELECTED DATE · MODEL HISTORY AWAITING ORIGINAL REPORTS';
+    const label=now.querySelector('span:last-child');
+    if(label&&label.textContent!==caption)label.textContent=caption;
+  }
+  function narrateEvent(event,extra=0){
+    if(!state.data||!event)return;
+    const bubble=$('#earth-replay-event');
+    if(!bubble)return;
+    const key=[event.date,event.type,event.company||'',event.side||''].join('|');
+    if(key===state.lastNarratedKey)return;
+    state.lastNarratedKey=key;
+    if(state.eventFlashTimer)clearTimeout(state.eventFlashTimer);
+    const type=event.type||'event',tags={
+      trade:event.side==='SELL'?'MODEL SELL':'MODEL BUY',
+      earnings:'QUARTERLY REPORT',rebalance:'MONTHLY REBALANCE',
+      observed_drawdown:'OBSERVED STRATEGY LOSS',
+      split:'CORPORATE ACTION',dividend:'DIVIDEND RECEIVED'
+    };
+    const name=(event.company||event.side||'').trim();
+    const heading=name||tags[type]||'Source-dated event';
+    const detail=(event.description||'A documented historical observation.')
+      +(extra>0?'  +'+extra+' additional event'+(extra===1?'':'s')+' on this step.':'');
+    $('#earth-replay-event-type').textContent=tags[type]||'HISTORICAL EVENT';
+    $('#earth-replay-event-title').textContent=heading;
+    $('#earth-replay-event-detail').textContent=detail;
+    $('#earth-replay-event-date').textContent=formatted(event.date);
+    bubble.classList.toggle('is-negative',type==='observed_drawdown'||event.side==='SELL');
+    bubble.hidden=false;
+    bubble.classList.remove('is-burst');
+    void bubble.offsetWidth;  // restart only on a genuine newly verified event
+    bubble.classList.add('is-burst');
+    state.eventFlashTimer=setTimeout(()=>{bubble.hidden=true;bubble.classList.remove('is-burst');},4800);
+  }
+  function timelineUpdate(detail){
+    const day=detail?.iso||state.day;
+    state.day=day;
+    const playing=Boolean(detail?.playing);
+    updatePlayhead(day,playing);
+    const events=state.data?.events||[];
+    if(state.data){
+      const passed=playing&&detail.from&&day>detail.from
+        ?events.filter(e=>e.date>detail.from&&e.date<=day)
+        :events.filter(e=>e.date===day);
+      if(passed.length)narrateEvent(passed.at(-1),passed.length-1);
+    }
+    // Repainting the entire research SVG/table every frame caused observable
+    // stutter; 5fps for accounting panels while the globe runs independently
+    // at 60fps is a deliberate animation budget.
+    const now=performance.now();
+    const significant=Boolean(detail?.events?.length);
+    if(!playing||significant||now-state.renderAt>230){
+      state.renderAt=now;
+      showPanel(day);
+    }else{
+      const row=activeData(day);
+      const stats=$('#replay-live-stats');
+      if(stats&&row){
+        stats.querySelector('span:first-child b')?.replaceChildren(document.createTextNode(money(row.nav)));
+        const ret=stats.querySelector('span:nth-child(2) b');
+        if(ret)ret.textContent=percent(row.return);
+      }
+    }
   }
   function showPanel(day){
     const row=activeData(day),d=state.data;
@@ -171,7 +280,11 @@
     if($('#backtest-chart-caption'))$('#backtest-chart-caption').textContent=d?
       'Fixed current universe · 0.15% modeled transaction costs · retrospective research only. '+quoteDisclaimer():
       'Data-gated: 2026 paper NAV is kept separate and must not be relabeled as 2024 returns.';
-    const holdings=$('#backtest-holdings');
+    const annual=$('#backtest-annual');
+    if(annual)annual.innerHTML=d?annualTable(d.history,d.through):empty(
+      'No authenticated annual performance yet',
+      'Year-by-year returns for 2024, 2025 and 2026 will appear after the complete source-dated research backtest is auditable.');
+        const holdings=$('#backtest-holdings');
     if(holdings)holdings.innerHTML=v?(row.positions?.length?
       row.positions.slice().sort((a,b)=>b.weight-a.weight).map(p=>
         '<div class="backtest-position"><div><strong>'+escapeHTML(p.name)+'</strong><small>'+percent(p.weight)+' weight · '+money(p.value)+'</small></div>'+
@@ -268,14 +381,17 @@
     const changed=JSON.stringify([state.data?.last_rebuilt_utc,state.status?.generated_utc])!==JSON.stringify(
       [next?.last_rebuilt_utc,status?.generated_utc]);
     state.data=next;state.status=status||null;
-    if(initial||changed)showPanel(state.day||new Date().toISOString().slice(0,10));
+    if(initial||changed){
+      // Keep globe events and the year-by-year performance engine in sync
+      // if an end-of-day GitHub deployment publishes new historical evidence.
+      window.dispatchEvent(new CustomEvent('kc:history-update',{detail:{history:next}}));
+      updatePlayhead(state.day||new Date().toISOString().slice(0,10),false);
+      showPanel(state.day||new Date().toISOString().slice(0,10));
+    }
   }
   function setup(){
     if(!$('#replay-mini-chart'))return;
-    window.addEventListener('kc:timeline',e=>{
-      state.day=e.detail?.iso||state.day;
-      showPanel(state.day);
-    });
+    window.addEventListener('kc:timeline',e=>timelineUpdate(e.detail));
     $$('.event-filter').forEach(button=>button.addEventListener('click',()=>{
       state.filter=button.dataset.eventKind;
       $$('.event-filter').forEach(b=>b.classList.toggle('is-active',b===button));
@@ -301,6 +417,8 @@
     // streaming trade feed, and a stale date must never be labeled "live".
     setInterval(()=>{if(!document.hidden)sync(false);},90000);
   }
+  // Expose pure research checks for independent runtime regression tests.
+  window.KCReplayResearch=Object.freeze({validData,drawChart,visibleCount:(rows,day)=>lowerBound(rows,day)});
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',setup,{once:true});
   else setup();
 })();

@@ -135,3 +135,39 @@
   .replay-coverage-item{border-right:0}
 }
 @media(prefers-reduced-motion:reduce){.replay-equity-svg,.replay-event{transition:none!important}}
+
+/* Source-audited calendar-year performance: no rows without real inputs. */
+.backtest-annual-head{display:flex;justify-content:space-between;gap:12px;padding:17px 19px 10px;border-top:1px solid #303e4a;border-bottom:1px solid #263440;color:#ffc479;font:700 10px/1.5 "IBM Plex Mono",monospace;letter-spacing:.065em}
+.backtest-annual-head span:last-child{color:#8296a5;font-size:9px;text-align:right}
+.backtest-annual .replay-empty-state{min-height:130px;padding:26px 16px}
+.backtest-annual>p{padding:18px;color:#94a5b1;font-size:12px}
+.replay-annual-table{width:100%}
+.replay-annual-table th,.replay-annual-table td{padding:11px 13px;white-space:nowrap;font-variant-numeric:tabular-nums}
+.replay-annual-table td:first-child{color:#fff3db;font-weight:700}
+.replay-annual-table small{color:#a8b8c4;font-weight:400;font-size:9px}
+.backtest-annual-notice{padding:11px 16px 17px;font:500 10px/1.7 "DM Sans",sans-serif;color:#8296a5}
+@media(max-width:620px){.backtest-annual-head{flex-wrap:wrap}.replay-annual-table th,.replay-annual-table td{padding:10px 9px}}
+
+/* Event-directed financial time machine: restrained Bloomberg-style amber. */
+.replay-progress-track{height:3px;overflow:hidden;border-radius:2px;background:#30404c;margin:0 0 8px;}
+.replay-progress-fill{height:100%;width:100%;transform:scaleX(0);transform-origin:left center;background:linear-gradient(90deg,#9b5d27,#ffb340,#ffe2a6);box-shadow:0 0 12px #ffb74680;transition:transform .13s linear;will-change:transform;}
+.replay-now-playing{min-height:25px;display:flex;align-items:center;gap:7px;margin:0 0 14px;
+  color:#95a8b8;font:600 9px/1.5 "IBM Plex Mono",monospace;letter-spacing:.015em}
+.replay-now-dot{flex:0 0 6px;height:6px;border-radius:50%;background:#ffb64b;box-shadow:0 0 0 3px #ffb64b18}
+.replay-now-playing.is-playing .replay-now-dot{animation:replay-pulse 1.5s ease-in-out infinite}
+@keyframes replay-pulse{0%,100%{opacity:.42;box-shadow:0 0 0 1px #ffb64b22}50%{opacity:1;box-shadow:0 0 0 7px #ffb64b11}}
+.earth-replay-event[hidden]{display:none!important}
+.earth-replay-event{position:absolute;z-index:5;right:14px;top:18px;width:min(245px,43%);
+  pointer-events:none;padding:13px 13px 12px;border:1px solid #b57c39b5;
+  border-left:3px solid #ffbd62;background:linear-gradient(125deg,#111b26e8,#19232bdc);
+  backdrop-filter:blur(12px);box-shadow:0 12px 35px #000b;border-radius:3px;overflow-wrap:anywhere}
+.earth-replay-event.is-negative{border-color:#ad6069;border-left-color:#fa777b}
+.earth-replay-event-type{display:block;font:700 9px/1.4 "IBM Plex Mono",monospace;color:#ffca7e;letter-spacing:.085em}
+.earth-replay-event.is-negative .earth-replay-event-type{color:#fc9a9d}
+.earth-replay-event-title{display:block;margin-top:8px;color:#f0f4f8;font:700 15px/1.25 "Space Grotesk",sans-serif}
+.earth-replay-event-detail{margin:7px 0 8px;color:#b9c9d6;font:500 10px/1.6 "DM Sans",sans-serif}
+.earth-replay-event-date{color:#859bae;font:600 9px "IBM Plex Mono",monospace}
+.earth-replay-event.is-burst{animation:replay-event-reveal .35s cubic-bezier(.22,.8,.3,1) both}
+@keyframes replay-event-reveal{from{transform:translateY(-10px);opacity:0;filter:blur(2px)}to{transform:translateY(0);opacity:1;filter:blur(0)}}
+@media(max-width:720px){.earth-replay-event{right:10px;top:48px;width:min(205px,48%);padding:10px}.earth-replay-event-title{font-size:12px}.earth-replay-event-detail{font-size:9px}.replay-now-playing{font-size:8px}}
+@media(prefers-reduced-motion:reduce){.earth-replay-event.is-burst,.replay-now-playing.is-playing .replay-now-dot{animation:none}.replay-progress-fill{transition:none}}
