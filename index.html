@@ -11,12 +11,12 @@
   <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Space+Grotesk:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="assets/terminal.css">
   <link rel="stylesheet" href="assets/terminal-bloomberg.css">
-  <link rel="stylesheet" href="assets/solar-home.css?v=2024-replay-v3">
-  <link rel="stylesheet" href="assets/replay-desk.css?v=2024-replay-v3">
+  <link rel="stylesheet" href="assets/solar-home.css?v=2024-replay-v4">
+  <link rel="stylesheet" href="assets/replay-desk.css?v=2024-replay-director-v5">
   <script src="assets/valuation-engine.js" defer></script>
-  <script src="assets/home-earth.js?v=2024-replay-zoom-v3" defer></script>
+  <script src="assets/home-earth.js?v=2024-replay-zoom-v4" defer></script>
   <script src="assets/terminal.js?v=2024-replay-v3" defer></script>
-  <script src="assets/replay-desk.js?v=2024-replay-v3" defer></script>
+  <script src="assets/replay-desk.js?v=2024-replay-director-v5" defer></script>
 </head>
 <body>
   <div class="shell">
@@ -62,6 +62,12 @@
               <div class="planet-canvas">
                 <canvas id="home-earth-canvas" tabindex="0" role="img" aria-label="Photorealistic Earth with NASA satellite surface, night-side city lights and clouds, rotating with pointer drag and wheel zoom"></canvas>
                 <canvas id="home-earth-overlay" aria-hidden="true"></canvas>
+                <div id="earth-replay-event" class="earth-replay-event" role="status" aria-live="polite" hidden>
+                  <span id="earth-replay-event-type" class="earth-replay-event-type">SOURCE-DATED EVENT</span>
+                  <strong id="earth-replay-event-title" class="earth-replay-event-title"></strong>
+                  <p id="earth-replay-event-detail" class="earth-replay-event-detail"></p>
+                  <span id="earth-replay-event-date" class="earth-replay-event-date"></span>
+                </div>
                 <span class="planet-notation">DRAG TO ROTATE <span>·</span> SCROLL / PINCH TO ZOOM <span>·</span> SOLAR LIGHTING: UTC</span>
                 <div class="earth-zoom-controls" role="group" aria-label="Earth zoom controls">
                   <button id="earth-zoom-in" class="earth-zoom-button" type="button" aria-label="Zoom in on Earth" title="Zoom in (+)">+</button>
@@ -81,10 +87,12 @@
                   <button type="button" id="replay-next-event" class="replay-event-jump" disabled>NEXT EVENT →</button>
                 </div>
                 <div class="replay-live-stats" id="replay-live-stats" aria-live="off"><span>2024 return —</span><span>Source data pending</span></div>
+                <div class="replay-progress-track" aria-label="Historical replay timeline progress"><div id="replay-progress-fill" class="replay-progress-fill"></div></div>
+                <div id="replay-now-playing" class="replay-now-playing"><span class="replay-now-dot"></span><span>SELECTED DATE · MODEL HISTORY AWAITING ORIGINAL REPORTS</span></div>
                 <div class="time-fact"><span class="time-fact-icon" aria-hidden="true">◉</span><div><strong id="time-summary-title">Checking historical evidence</strong><p id="time-summary">Only source-verified filings and prices can produce historical return figures.</p></div></div>
                 <div class="time-event-list" id="time-events" aria-live="polite"></div>
                 <button class="replay-research-link" data-page-go="backtest" type="button">OPEN FULL 2024 REPLAY DESK ↗</button>
-                <div class="time-footnote">The Sun follows the selected UTC date and an accelerated day/night cycle. Earth imagery is a NASA Blue Marble composite, <em>not</em> a real-time satellite feed. Night lights and clouds are illustrative layers. Verified negative events alone can trigger meteors; no future accounting data enter historical signals. <a href="assets/EARTH_CREDITS.md" target="_blank" rel="noopener">Imagery credits ↗</a></div>
+                <div class="time-footnote">The globe animation follows the selected UTC date. Playback runs at adjustable speed. Earth imagery is a NASA Blue Marble composite, <em>not</em> a real-time satellite feed. Night lights and clouds are illustrative layers. Verified negative events alone can trigger meteors; no future accounting data enter historical signals. <a href="assets/EARTH_CREDITS.md" target="_blank" rel="noopener">Imagery credits ↗</a></div>
               </div>
             </div>
           </section>
@@ -109,9 +117,11 @@
           <div class="backtest-note" role="note"><strong>HISTORICAL INTEGRITY</strong><span>This is a retrospective test of today's strategy rules on a fixed, surviving company universe. A valid curve requires date-stamped filings, original pre-trade prices, FX, corporate actions and a full audit trail. Until then, no 2024 performance or trades are claimed.</span></div>
           <div class="stat-grid" id="backtest-stats"></div>
           <div class="two-column backtest-grid">
-            <div class="panel panel-feature"><div class="panel-head"><div><div class="eyebrow">EQUITY CURVE / EUR</div><h2>2024-to-date reconstructed NAV</h2></div></div>
+            <div class="panel panel-feature"><div class="panel-head"><div><div class="eyebrow">EQUITY CURVE / EUR</div><h2>2024–present reconstructed NAV</h2></div></div>
               <div id="backtest-chart" class="backtest-chart"><div class="replay-chart-empty">Historical data not yet validated.</div></div>
               <div class="panel-footer" id="backtest-chart-caption">No simulated returns are shown without source-verified inputs.</div>
+              <div class="backtest-annual-head"><span>ANNUAL PERFORMANCE</span><span>EUR · HYPOTHETICAL RECONSTRUCTION</span></div>
+              <div id="backtest-annual" class="backtest-annual"><p>Verified annual returns will appear after original issuer filings and price series are validated.</p></div>
             </div>
             <div class="panel"><div class="panel-head"><div><div class="eyebrow">AT THE SELECTED DATE</div><h2>As-of portfolio</h2></div></div>
               <div id="backtest-holdings" class="backtest-holdings"></div>

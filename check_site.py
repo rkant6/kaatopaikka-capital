@@ -107,6 +107,11 @@ def check_javascript():
         fail("2024 replay JS was not included in the script verification")
     if "assets/replay-desk.css" not in html:
         fail("2024 replay stylesheet is missing")
+    replay = subprocess.run([node, "tests/replay_playback_smoke.js"],
+                            cwd=HERE, capture_output=True, text=True)
+    if replay.returncode:
+        fail("2024 replay look-ahead test failed:\\n" + replay.stderr[-2400:])
+    print(replay.stdout.strip())
 
 
 
