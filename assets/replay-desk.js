@@ -417,6 +417,8 @@
     // streaming trade feed, and a stale date must never be labeled "live".
     setInterval(()=>{if(!document.hidden)sync(false);},90000);
   }
+  // Expose pure research checks for independent runtime regression tests.
+  window.KCReplayResearch=Object.freeze({validData,drawChart,visibleCount:(rows,day)=>lowerBound(rows,day)});
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',setup,{once:true});
   else setup();
 })();
