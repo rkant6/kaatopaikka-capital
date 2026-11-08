@@ -135,3 +135,15 @@
   .replay-coverage-item{border-right:0}
 }
 @media(prefers-reduced-motion:reduce){.replay-equity-svg,.replay-event{transition:none!important}}
+
+/* Source-audited calendar-year performance: no rows without real inputs. */
+.backtest-annual-head{display:flex;justify-content:space-between;gap:12px;padding:17px 19px 10px;border-top:1px solid #303e4a;border-bottom:1px solid #263440;color:#ffc479;font:700 10px/1.5 "IBM Plex Mono",monospace;letter-spacing:.065em}
+.backtest-annual-head span:last-child{color:#8296a5;font-size:9px;text-align:right}
+.backtest-annual .replay-empty-state{min-height:130px;padding:26px 16px}
+.backtest-annual>p{padding:18px;color:#94a5b1;font-size:12px}
+.replay-annual-table{width:100%}
+.replay-annual-table th,.replay-annual-table td{padding:11px 13px;white-space:nowrap;font-variant-numeric:tabular-nums}
+.replay-annual-table td:first-child{color:#fff3db;font-weight:700}
+.replay-annual-table small{color:#a8b8c4;font-weight:400;font-size:9px}
+.backtest-annual-notice{padding:11px 16px 17px;font:500 10px/1.7 "DM Sans",sans-serif;color:#8296a5}
+@media(max-width:620px){.backtest-annual-head{flex-wrap:wrap}.replay-annual-table th,.replay-annual-table td{padding:10px 9px}}
