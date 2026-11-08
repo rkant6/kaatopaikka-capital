@@ -24,7 +24,8 @@
     trade:'MODEL TRADE',earnings:'EARNINGS RELEASE',rebalance:'REBALANCE',
     dividend:'DIVIDEND',split:'CORPORATE ACTION',observed_drawdown:'PORTFOLIO RISK'
   };
-  const state={data:null,status:null,day:null,filter:'all',lastError:null};
+  const state={data:null,status:null,day:null,filter:'all',lastError:null,renderAt:0,
+    eventFlashTimer:null,lastNarratedKey:null,playMode:false};
   const safeLink=url=>typeof url==='string'&&url.startsWith('https://')?url:null;
 
   function validData(data){
@@ -169,6 +170,81 @@
         '<small class="replay-source-muted">Calculated from the dated backtest</small>'))+
       '</div></article>';
   }
+  // Event director: only source-dated events from an approved backtest may
+  // ever appear as BUY, SELL, EARNINGS or LOSS on the moving globe.
+  function updatePlayhead(day,playing){
+    const track=$('#replay-progress-fill'),now=$('#replay-now-playing');
+    const total=Math.max(1,Date.now()-START),progress=Math.max(0,Math.min(1,(+asUTC(day)-START)/total));
+    if(track)track.style.transform='scaleX('+progress.toFixed(5)+')';
+    if(!now)return;
+    const eventMode=state.data&&day>=state.data.from&&day<=state.data.through;
+    now.classList.toggle('is-playing',Boolean(playing));
+    const caption=eventMode
+      ?'RESEARCH BACKTEST · '+formatted(day)+' · SOURCE-DATED'
+      :playing?'VISUAL TIME TRAVEL · NO VERIFIED 2024 MODEL ORDERS'
+        :'SELECTED DATE · MODEL HISTORY AWAITING ORIGINAL REPORTS';
+    const label=now.querySelector('span:last-child');
+    if(label&&label.textContent!==caption)label.textContent=caption;
+  }
+  function narrateEvent(event,extra=0){
+    if(!state.data||!event)return;
+    const bubble=$('#earth-replay-event');
+    if(!bubble)return;
+    const key=[event.date,event.type,event.company||'',event.side||''].join('|');
+    if(key===state.lastNarratedKey)return;
+    state.lastNarratedKey=key;
+    if(state.eventFlashTimer)clearTimeout(state.eventFlashTimer);
+    const type=event.type||'event',tags={
+      trade:event.side==='SELL'?'MODEL SELL':'MODEL BUY',
+      earnings:'QUARTERLY REPORT',rebalance:'MONTHLY REBALANCE',
+      observed_drawdown:'OBSERVED STRATEGY LOSS',
+      split:'CORPORATE ACTION',dividend:'DIVIDEND RECEIVED'
+    };
+    const name=(event.company||event.side||'').trim();
+    const heading=name||tags[type]||'Source-dated event';
+    const detail=(event.description||'A documented historical observation.')
+      +(extra>0?'  +'+extra+' additional event'+(extra===1?'':'s')+' on this step.':'');
+    $('#earth-replay-event-type').textContent=tags[type]||'HISTORICAL EVENT';
+    $('#earth-replay-event-title').textContent=heading;
+    $('#earth-replay-event-detail').textContent=detail;
+    $('#earth-replay-event-date').textContent=formatted(event.date);
+    bubble.classList.toggle('is-negative',type==='observed_drawdown'||event.side==='SELL');
+    bubble.hidden=false;
+    bubble.classList.remove('is-burst');
+    void bubble.offsetWidth;  // restart only on a genuine newly verified event
+    bubble.classList.add('is-burst');
+    state.eventFlashTimer=setTimeout(()=>{bubble.hidden=true;bubble.classList.remove('is-burst');},4800);
+  }
+  function timelineUpdate(detail){
+    const day=detail?.iso||state.day;
+    state.day=day;
+    const playing=Boolean(detail?.playing);
+    updatePlayhead(day,playing);
+    const events=state.data?.events||[];
+    if(state.data){
+      const passed=playing&&detail.from&&day>detail.from
+        ?events.filter(e=>e.date>detail.from&&e.date<=day)
+        :events.filter(e=>e.date===day);
+      if(passed.length)narrateEvent(passed.at(-1),passed.length-1);
+    }
+    // Repainting the entire research SVG/table every frame caused observable
+    // stutter; 5fps for accounting panels while the globe runs independently
+    // at 60fps is a deliberate animation budget.
+    const now=performance.now();
+    const significant=Boolean(detail?.events?.length);
+    if(!playing||significant||now-state.renderAt>230){
+      state.renderAt=now;
+      showPanel(day);
+    }else{
+      const row=activeData(day);
+      const stats=$('#replay-live-stats');
+      if(stats&&row){
+        stats.querySelector('span:first-child b')?.replaceChildren(document.createTextNode(money(row.nav)));
+        const ret=stats.querySelector('span:nth-child(2) b');
+        if(ret)ret.textContent=percent(row.return);
+      }
+    }
+  }
   function showPanel(day){
     const row=activeData(day),d=state.data;
     const v=Boolean(row),startText=day<'2024-01-02'?'Before the first market session':'No validated trading records';
@@ -305,15 +381,13 @@
       // Keep globe events and the year-by-year performance engine in sync
       // if an end-of-day GitHub deployment publishes new historical evidence.
       window.dispatchEvent(new CustomEvent('kc:history-update',{detail:{history:next}}));
+      updatePlayhead(state.day||new Date().toISOString().slice(0,10),false);
       showPanel(state.day||new Date().toISOString().slice(0,10));
     }
   }
   function setup(){
     if(!$('#replay-mini-chart'))return;
-    window.addEventListener('kc:timeline',e=>{
-      state.day=e.detail?.iso||state.day;
-      showPanel(state.day);
-    });
+    window.addEventListener('kc:timeline',e=>timelineUpdate(e.detail));
     $$('.event-filter').forEach(button=>button.addEventListener('click',()=>{
       state.filter=button.dataset.eventKind;
       $$('.event-filter').forEach(b=>b.classList.toggle('is-active',b===button));
