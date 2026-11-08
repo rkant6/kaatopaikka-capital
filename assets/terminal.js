@@ -139,12 +139,12 @@
     for(let i=snaps.length-1;i>=0;i--)if(snaps[i].date<=iso)return snaps[i];
     return null;
   }
-  function sendGlobeTime(iso,meteor=null) {
+  function sendGlobeTime(iso,meteor=null,replayEvents=[]) {
     const current=iso>=state.data?.meta?.priceTo;
     const verified=state.history?.validated_inputs===true && Array.isArray(state.history.history);
     const snap=verified&&!current?lastReplaySnapshot(iso):null;
     const packet={type:'KC_GLOBE_TIME',date:iso,mode:current?'current':snap?'verified':'unverified',
-      companies:current?null:snap?.companies||null,event:meteor};
+      companies:current?null:snap?.companies||null,event:meteor,events:replayEvents};
     // Home canvas is the primary renderer: it remains visible even when
     // third-party Three.js or WebGL are unavailable.
     window.KCHomeEarth?.setSnapshot(packet);
@@ -185,8 +185,13 @@
     if(opts.playing&&verified&&prev&&iso>prev){
       meteor=(state.history.events||[]).find(e=>e.date>prev&&e.date<=iso&&e.type==='observed_drawdown')||null;
     }
-    sendGlobeTime(iso,meteor);
-    window.dispatchEvent(new CustomEvent('kc:timeline',{detail:{iso,playing:Boolean(opts.playing),from:prev}}));
+    // Highlight only events actually present in the audited historical file.
+    // Trades/earnings are never inferred from the latest (2026) snapshot.
+    const replayEvents=opts.playing&&verified&&prev&&iso>prev
+      ?(state.history.events||[]).filter(e=>e.date>prev&&e.date<=iso).slice(-10):[];
+    sendGlobeTime(iso,meteor,replayEvents);
+    window.dispatchEvent(new CustomEvent('kc:timeline',{detail:{iso,playing:Boolean(opts.playing),from:prev,
+      events:replayEvents}}));
   }
   function stopTime(){
     if(state.playRaf!==null)cancelAnimationFrame(state.playRaf);
