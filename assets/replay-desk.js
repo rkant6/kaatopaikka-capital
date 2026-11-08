@@ -115,6 +115,35 @@
       '<span>Cursor: '+escapeHTML(chosen?.date||'—')+'</span></div>';
     return svg;
   }
+  function annualTable(history,through){
+    if(!history?.length)return empty('Annual return table pending',
+      'The 2024–present model history cannot be calculated without dated Q1–Q4 original releases and prices.');
+    const years=[...new Set(history.map(x=>x.date.slice(0,4)))].sort();
+    const rows=[];
+    let priorNav=10000,priorBench=10000;
+    for(const year of years){
+      const entries=history.filter(h=>h.date.startsWith(year));
+      if(!entries.length)continue;
+      // Annual returns use the last recorded close of the prior year,
+      // or the actual EUR 10,000 notional starting capital for FY2024.
+      const last=entries.at(-1);
+      const ret=last.nav/priorNav-1,bench=last.bench_nav/priorBench-1;
+      let peak=priorNav,maxDD=0;
+      for(const p of entries){peak=Math.max(peak,p.nav);maxDD=Math.min(maxDD,p.nav/peak-1);}
+      const complete=year<through.slice(0,4);
+      rows.push('<tr><td><b>'+escapeHTML(year)+'</b> '+(complete?'':'<small>YTD</small>')+'</td>'+
+        '<td class="'+(ret<0?'negative':'positive')+'">'+escapeHTML(percent(ret))+'</td>'+
+        '<td class="'+(bench<0?'negative':'positive')+'">'+escapeHTML(percent(bench))+'</td>'+
+        '<td class="'+(ret-bench<0?'negative':'positive')+'">'+escapeHTML(percent(ret-bench))+'</td>'+
+        '<td class="negative">'+escapeHTML(percent(maxDD))+'</td>'+
+        '<td>'+escapeHTML(money(last.nav))+'</td></tr>');
+      priorNav=last.nav;priorBench=last.bench_nav;
+    }
+    return '<div class="table-scroll"><table class="data-table replay-annual-table">'+
+      '<thead><tr><th>YEAR</th><th>STRATEGY</th><th>BENCHMARK</th><th>EXCESS</th><th>MAX DD</th><th>YEAR-END NAV</th></tr></thead>'+
+      '<tbody>'+rows.join('')+'</tbody></table></div>'+
+      '<div class="backtest-annual-notice">Retrospective research on a fixed, survivorship-biased universe. Returns include modeled trade costs, cash dividends and split accounting; no live investment performance is implied.</div>';
+  }
   function classOfEvent(e){
     return e.type==='observed_drawdown'?'risk':
       e.type==='trade'?'trade':e.type==='earnings'?'earnings':
@@ -171,7 +200,11 @@
     if($('#backtest-chart-caption'))$('#backtest-chart-caption').textContent=d?
       'Fixed current universe · 0.15% modeled transaction costs · retrospective research only. '+quoteDisclaimer():
       'Data-gated: 2026 paper NAV is kept separate and must not be relabeled as 2024 returns.';
-    const holdings=$('#backtest-holdings');
+    const annual=$('#backtest-annual');
+    if(annual)annual.innerHTML=d?annualTable(d.history,d.through):empty(
+      'No authenticated annual performance yet',
+      'Year-by-year returns for 2024, 2025 and 2026 will appear after the complete source-dated research backtest is auditable.');
+        const holdings=$('#backtest-holdings');
     if(holdings)holdings.innerHTML=v?(row.positions?.length?
       row.positions.slice().sort((a,b)=>b.weight-a.weight).map(p=>
         '<div class="backtest-position"><div><strong>'+escapeHTML(p.name)+'</strong><small>'+percent(p.weight)+' weight · '+money(p.value)+'</small></div>'+
@@ -268,7 +301,12 @@
     const changed=JSON.stringify([state.data?.last_rebuilt_utc,state.status?.generated_utc])!==JSON.stringify(
       [next?.last_rebuilt_utc,status?.generated_utc]);
     state.data=next;state.status=status||null;
-    if(initial||changed)showPanel(state.day||new Date().toISOString().slice(0,10));
+    if(initial||changed){
+      // Keep globe events and the year-by-year performance engine in sync
+      // if an end-of-day GitHub deployment publishes new historical evidence.
+      window.dispatchEvent(new CustomEvent('kc:history-update',{detail:{history:next}}));
+      showPanel(state.day||new Date().toISOString().slice(0,10));
+    }
   }
   function setup(){
     if(!$('#replay-mini-chart'))return;
