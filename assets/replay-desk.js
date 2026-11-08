@@ -72,20 +72,24 @@
   }
   function drawChart(history,day,mini){
     if(!history?.length)return '';
+    // A 2024 playback frame must NEVER draw the future equity curve.
+    // Only points dated on or before the selected frame are visible.
+    const visible=history.slice(0,lowerBound(history,day));
+    if(!visible.length)return empty('Strategy not yet started','No recorded simulated trade or NAV exists at this date.');
     const W=920,H=mini?138:320;
     const pad={l:mini?13:64,r:mini?18:28,t:mini?13:24,b:mini?10:46};
     const x0=pad.l,x1=W-pad.r,y0=pad.t,y1=H-pad.b;
-    const yvalues=history.flatMap(h=>[+h.nav,+h.bench_nav||+h.nav]).filter(Number.isFinite);
+    const yvalues=visible.flatMap(h=>[+h.nav,+h.bench_nav||+h.nav]).filter(Number.isFinite);
     let vmin=Math.min(...yvalues),vmax=Math.max(...yvalues);
     if(vmax===vmin){vmax*=1.025;vmin*=.975;}
     const diff=Math.max(vmax-vmin,1);vmin-=diff*.08;vmax+=diff*.08;
     const x=i=>x0+i*(x1-x0)/Math.max(1,history.length-1);
     const y=v=>y1-(+v-vmin)/(vmax-vmin)*(y1-y0);
-    const curve=(field)=>history.map((p,i)=>(i?'L':'M')+x(i).toFixed(2)+','+y(p[field]??p.nav).toFixed(2)).join(' ');
-    const chosen=lastAt(history,day);
-    const currentIndex=chosen?history.indexOf(chosen):0;
+    const curve=(field)=>visible.map((p,i)=>(i?'L':'M')+x(i).toFixed(2)+','+y(p[field]??p.nav).toFixed(2)).join(' ');
+    const chosen=visible.at(-1);
+    const currentIndex=visible.length-1;
     const currentX=x(currentIndex);
-    let svg='<svg class="replay-equity-svg" viewBox="0 0 '+W+' '+H+'" role="img" aria-label="Historical model NAV and equal-weight benchmark through '+escapeHTML(history.at(-1).date)+'">';
+    let svg='<svg class="replay-equity-svg" viewBox="0 0 '+W+' '+H+'" role="img" aria-label="Historical model NAV and equal-weight benchmark through '+escapeHTML(chosen?.date||day)+'">';
     svg+='<defs><linearGradient id="'+(mini?'mini':'backtest')+'-replay-grad" x1="0" y1="0" x2="0" y2="1">'+
       '<stop offset="0%" stop-color="#ffa936" stop-opacity=".21"/>'+
       '<stop offset="100%" stop-color="#ffa936" stop-opacity="0"/></linearGradient></defs>';
@@ -100,7 +104,7 @@
           escapeHTML(history[i].date.slice(0,7))+'</text>';
       });
     }
-    const start=x(0)+','+y1,final=x(history.length-1)+','+y1;
+    const start=x(0)+','+y1,final=currentX+','+y1;
     svg+='<path d="M'+start+' '+curve('nav')+' L'+final+' Z" fill="url(#'+(mini?'mini':'backtest')+'-replay-grad)"/>';
     svg+='<path d="'+curve('bench_nav')+'" fill="none" stroke="#7497bb" stroke-width="'+(mini?1.8:2.5)+'" opacity=".95"/>';
     svg+='<path d="'+curve('nav')+'" fill="none" stroke="#ffad38" stroke-width="'+(mini?2.8:3.7)+'" stroke-linecap="round" stroke-linejoin="round"/>';
