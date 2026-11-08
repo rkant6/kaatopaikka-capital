@@ -399,6 +399,16 @@
     }
   }
   async function init() {
+    // Replay evidence can arrive after the initial static page load.
+    // Keep historical globe markers/events source-verified during live refresh.
+    window.addEventListener('kc:history-update',event=>{
+      const history=event.detail?.history;
+      state.history=history?.validated_inputs===true?history:null;
+      if(state.replayDay){
+        const day=Math.round((Date.parse(state.replayDay+'T00:00:00Z')-TIMELINE_START)/DAY_MS);
+        setTimelineDay(day);
+      }
+    });
     dates();hookEvents();
     try {
       const [data,port,sim,historical]=await Promise.all([loadJSON('data.json'),loadJSON('portfolio.json'),loadJSON('simulation.json'),
