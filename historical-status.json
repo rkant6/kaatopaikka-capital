@@ -1,5 +1,5 @@
 {
-  "generated_utc": null,
+  "generated_utc": "2026-11-09T18:00:36+00:00",
   "research_window_start": "2024-01-01",
   "universe_companies": 30,
   "input_rows": {
@@ -7,10 +7,10 @@
     "annual_margins": 0,
     "prices": 0
   },
+  "data_delay": "Quotes refresh with the scheduled end-of-day GitHub Action, not tick-by-tick.",
+  "source_authenticity": "URLs and dates are structurally validated; original issuer PDFs require human verification.",
+  "retrospective": "Fixed 2026-selected universe; survivorship and selection biases cannot be ruled out.",
   "status": "source_data_incomplete",
   "validated_inputs": false,
-  "reason": "No source-dated financial filings, annual margins or historical market prices have yet been supplied to the production dataset.",
-  "data_delay": "Published market snapshot is end-of-day, not tick-by-tick.",
-  "source_authenticity": "Original financial report URLs and dates require human verification.",
-  "retrospective": "Current 2026-selected 30-name universe; survivorship and strategy-selection bias."
+  "reason": "/home/runner/work/kaatopaikka-capital/kaatopaikka-capital/historical_data/filings.csv has no evidence-backed historical observations"
 }
